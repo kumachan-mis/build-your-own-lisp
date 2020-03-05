@@ -2,8 +2,9 @@
 #define _EVALUATION_HPP_
 
 
-#include "lib/mpc.hpp"
+#include "lispvalue.hpp"
 
-int evaluate(mpc_ast_t* ast);
+
+LispValue evaluate(LispValue& value);
 
 #endif  // _EVALUATION_HPP_

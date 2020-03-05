@@ -1,6 +1,7 @@
 #ifndef _OPERATION_HPP_
 #define _OPERATION_HPP_
 
+
 int safe_add(int x, int y);
 int safe_sub(int x, int y);
 int safe_mul(int x, int y);

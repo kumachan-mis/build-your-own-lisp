@@ -4,6 +4,8 @@
 #include <editline/readline.h>
 #include "lib/mpc.hpp"
 
+#include "lispvalue.hpp"
+#include "parsing.hpp"
 #include "evaluation.hpp"
 
 
@@ -33,8 +35,9 @@ int main(int argc, char* argv[]) {
         mpc_result_t r;
         if (mpc_parse("<stdin>", input.get(), Lispy, &r)) {
             try {
-                int result = evaluate((mpc_ast_t*)r.output);
-                std::cout << result << std::endl;
+                LispValue value = ast_to_lispvalue((mpc_ast_t*)r.output);
+                value = evaluate(value);
+                cout_lispvalue(value);
             } catch (const std::exception& exception) {
                 std::cerr << exception.what() << std::endl;
             }

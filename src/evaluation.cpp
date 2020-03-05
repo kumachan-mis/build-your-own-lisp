@@ -2,30 +2,51 @@
 #include <string>
 #include <stdexcept>
 #include "operation.hpp"
-#include "lib/mpc.hpp"
+#include "lispvalue.hpp"
 
-int evaluate(mpc_ast_t* ast);
+
+LispValue evaluate(LispValue& value);
 int evaluate_operator(std::string op, int x, int y);
 int evaluate_operator(std::string op, int x);
 
-int evaluate(mpc_ast_t* ast) {
-    if (std::string(ast->tag).find("number") != std::string::npos) {
-        try {
-            int number = std::stoi(ast->contents);
-            return number;
-        } catch (const std::exception&) {
-            throw std::out_of_range("Error: fail to convert to a number");
+
+LispValue evaluate(LispValue& value) {
+    const int num_cells = value.cells.size();
+    for (int index = 0; index < num_cells; index++) {
+        value.cells[index] = evaluate(value.cells[index]);
+    }
+
+    if (num_cells == 0) return value;
+    if (num_cells == 1) return value.cells[0];
+
+    LispValue symbol = value.cells[0];
+    if (symbol.type != LispType::Symbol) {
+        throw std::invalid_argument("Error: S-Expression does not start with symbol");
+    }
+    for (
+        auto cell_itr = value.cells.begin() + 1, end = value.cells.end();
+        cell_itr != end; cell_itr++
+    ) {
+        if (cell_itr->type != LispType::Number) {
+            throw std::invalid_argument("Cannot operate on non-number");
         }
     }
 
-    std::string op(ast->children[1]->contents);
-    int ret = evaluate(ast->children[2]);
-    if (ast->children_num == 4) return evaluate_operator(op, ret);
-    int children_num = ast->children_num;
-    for (int index = 3; index < children_num - 1; index++) {
-        ret = evaluate_operator(op, ret, evaluate(ast->children[index]));
+    int number = (value.cells.begin() + 1)->number;
+    if (num_cells == 2) {
+        number = evaluate_operator(symbol.symbol, number);
+    } else {
+        for (
+            auto cell_itr = value.cells.begin() + 2, end = value.cells.end(); 
+            cell_itr != end; cell_itr++
+        ) {
+            number = evaluate_operator(symbol.symbol, number, cell_itr->number);
+        }
     }
-    return ret;
+    value.type = LispType::Number;
+    value.number = number;
+    value.cells.clear();
+    return value;
 }
 
 int evaluate_operator(std::string op, int x, int y) {
