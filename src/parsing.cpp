@@ -1,44 +1,38 @@
 #include <string>
 #include <stdexcept>
 #include "lib/mpc.hpp"
-
 #include "lispvalue.hpp"
-
-#include <iostream>
-
-
-LispValue ast_to_lispvalue(mpc_ast_t* ast);
-inline LispValue ast_to_number(mpc_ast_t* ast);
-inline LispValue ast_to_symbol(mpc_ast_t* ast);
 
 
 LispValue ast_to_lispvalue(mpc_ast_t* ast) {
-    if (std::string(ast->tag).find("number") != std::string::npos) {
-        return ast_to_number(ast);
+     std::string tag(ast->tag);
+    if (tag.find("number") != std::string::npos) {
+        return LispValue(LispType::Number, ast->contents);
     }
-    if (std::string(ast->tag).find("symbol") != std::string::npos) {
-        return ast_to_symbol(ast);
+    if (tag.find("symbol") != std::string::npos) {
+        return LispValue(LispType::Symbol, ast->contents);
     }
 
-    LispValue s_expr;
+    LispType expr_type;
+    if (tag == ">" || tag.find("sexpr") != std::string::npos) {
+        expr_type = LispType::S_Expression;
+    } else if (tag.find("qexpr") != std::string::npos) {
+        expr_type = LispType::Q_Expression;
+    } else {
+        throw std::invalid_argument("Error: unexpected tag \"" + tag + "\"");
+    }
+
+    LispValue expr(expr_type);
     int children_num = ast->children_num;
     for (int index = 0; index < children_num; index++) {
-        std::string contents(ast->children[index]->contents), tag(ast->children[index]->tag);
-        if (contents == "(" || contents == ")" || tag == "regex") continue;
-        s_expr.cells.push_back(ast_to_lispvalue(ast->children[index]));
+        std::string child_contents(ast->children[index]->contents);
+        std::string child_tag(ast->children[index]->tag);
+        if (
+            child_contents == "(" || child_contents == ")" ||
+            child_contents == "{" || child_contents == "}" ||
+            child_tag == "regex"
+        ) continue;
+        expr.cells.push_back(ast_to_lispvalue(ast->children[index]));
     }
-    return s_expr;
-}
-
-inline LispValue ast_to_number(mpc_ast_t* ast) {
-    try {
-        int number = std::stoi(ast->contents);
-        return LispValue(number);
-    } catch (const std::exception&) {
-        throw std::out_of_range("Error: fail to convert to a number");
-    }
-}
-
-inline LispValue ast_to_symbol(mpc_ast_t* ast) {
-    return LispValue(ast->contents);
+    return expr;
 }

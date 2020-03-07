@@ -1,34 +1,42 @@
 #include "lispvalue.hpp"
 #include <iostream>
+#include <vector>
 
 
-void cout_lispvalue(const LispValue& value);
-void rec_cout_lispvalue(const LispValue& value);
+template<typename T>
+std::ostream& operator<<(std::ostream& os, const std::vector<T>& vector);
 
 
-void cout_lispvalue(const LispValue& value) {
-    rec_cout_lispvalue(value);
-    std::cout << std::endl;
+int LispValue::to_int() const {
+    if (this->type != LispType::Number) {
+        throw std::invalid_argument("Error: argument type is not number");
+    }
+    try {
+        return std::stoi(this->value);
+    } catch (...) {
+        throw std::invalid_argument("Error: fail to convert argument to number");
+    }
 }
 
-void rec_cout_lispvalue(const LispValue& value) {
+std::ostream& operator<<(std::ostream& os, const LispValue& value) {
     switch (value.type) {
         case LispType::Number:
-            std::cout << value.number;
-            break;
         case LispType::Symbol:
-            std::cout << value.symbol;
-            break;
+            return os << value.value;
         case LispType::S_Expression:
-            std::cout << '(';
-            for (
-                auto cell_itr = value.cells.begin(), end = value.cells.end();
-                cell_itr != end; cell_itr++
-            ) {
-                rec_cout_lispvalue(*cell_itr);
-                if (cell_itr != end - 1) std::cout << ' ';
-            }
-            std::cout << ')';
-            break;
+            return os << '(' << value.cells << ')';
+        case LispType::Q_Expression:
+            return os << '{' << value.cells << '}';
+        default:
+            return os;
     }
+}
+
+template<typename T>
+std::ostream& operator<<(std::ostream& os, const std::vector<T>& vector) {
+    for (auto itr = vector.begin(), end = vector.end(); itr != end; itr++) {
+        os << *itr;
+        if (itr != end - 1) os << ' ';
+    }
+    return os;
 }

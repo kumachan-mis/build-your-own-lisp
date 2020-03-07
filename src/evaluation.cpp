@@ -1,16 +1,22 @@
 #include <iostream>
 #include <string>
 #include <stdexcept>
-#include "operation.hpp"
+#include "builtin.hpp"
 #include "lispvalue.hpp"
 
 
-LispValue evaluate(LispValue& value);
-int evaluate_operator(std::string op, int x, int y);
-int evaluate_operator(std::string op, int x);
-
+LispValue evaluate_sexpr(LispValue& value);
+inline LispValue evaluate_builtin_functions(
+    const std::string& function_name,
+    const std::vector<LispValue>& arguments
+);
 
 LispValue evaluate(LispValue& value) {
+    if (value.type == LispType::S_Expression) return evaluate_sexpr(value);
+    return value;
+}
+
+LispValue evaluate_sexpr(LispValue& value) {
     const int num_cells = value.cells.size();
     for (int index = 0; index < num_cells; index++) {
         value.cells[index] = evaluate(value.cells[index]);
@@ -23,44 +29,27 @@ LispValue evaluate(LispValue& value) {
     if (symbol.type != LispType::Symbol) {
         throw std::invalid_argument("Error: S-Expression does not start with symbol");
     }
-    for (
-        auto cell_itr = value.cells.begin() + 1, end = value.cells.end();
-        cell_itr != end; cell_itr++
-    ) {
-        if (cell_itr->type != LispType::Number) {
-            throw std::invalid_argument("Cannot operate on non-number");
-        }
-    }
-
-    int number = (value.cells.begin() + 1)->number;
-    if (num_cells == 2) {
-        number = evaluate_operator(symbol.symbol, number);
-    } else {
-        for (
-            auto cell_itr = value.cells.begin() + 2, end = value.cells.end(); 
-            cell_itr != end; cell_itr++
-        ) {
-            number = evaluate_operator(symbol.symbol, number, cell_itr->number);
-        }
-    }
-    value.type = LispType::Number;
-    value.number = number;
-    value.cells.clear();
+    value.cells.erase(value.cells.begin());
+    value = evaluate_builtin_functions(symbol.value, value.cells);
     return value;
 }
 
-int evaluate_operator(std::string op, int x, int y) {
-    if (op == "+") return safe_add(x, y);
-    if (op == "-") return safe_sub(x, y);
-    if (op == "*") return safe_mul(x, y);
-    if (op == "/") return safe_div(x, y);
-    if (op == "%") return safe_mod(x, y);
-    if (op == "^") return safe_pow(x, y);
-    throw std::invalid_argument("Error: operator \"" + op + "\" is not supported");
-}
-
-int evaluate_operator(std::string op, int x) {
-    if (op == "+") return  x;
-    if (op == "-") return safe_neg(x);
-    throw std::invalid_argument("Error: operator \"" + op + "\" is not supported");
+inline LispValue evaluate_builtin_functions(
+    const std::string& function_name,
+    const std::vector<LispValue>& arguments
+) {
+    if (function_name == "+")    return builtin_add(arguments);
+    if (function_name == "-")    return builtin_sub(arguments);
+    if (function_name == "*")    return builtin_mul(arguments);
+    if (function_name == "/")    return builtin_div(arguments);
+    if (function_name == "%")    return builtin_mod(arguments);
+    if (function_name == "^")    return builtin_pow(arguments);
+    if (function_name == "list") return builtin_list(arguments);
+    if (function_name == "head") return builtin_head(arguments);
+    if (function_name == "tail") return builtin_tail(arguments);
+    if (function_name == "join") return builtin_join(arguments);
+    if (function_name == "eval") return builtin_eval(arguments);
+    if (function_name == "cons") return builtin_cons(arguments);
+    if (function_name == "len")  return builtin_len(arguments);
+    throw std::invalid_argument("Error: built-in function \"" + function_name + "\" is not supported");
 }

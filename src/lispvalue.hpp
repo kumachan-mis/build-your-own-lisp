@@ -7,22 +7,27 @@
 
 
 enum struct LispType {
+    // Atoms
     Number,
     Symbol,
-    S_Expression
+    // Lists
+    S_Expression,
+    Q_Expression
 };
 
 struct LispValue {
     LispType type;
-    int number;
-    std::string symbol;
+    // Atoms
+    std::string value;
+    // Lists
     std::vector<LispValue> cells;
 
-    LispValue(int _number): type(LispType::Number), number(_number), symbol(), cells() {}
-    LispValue(const std::string& _symbol): type(LispType::Symbol), number(), symbol(_symbol), cells() {}
-    LispValue(): type(LispType::S_Expression), number(), symbol(), cells() {}
+    LispValue(const LispType& _type): type(_type), value(), cells() {}
+    LispValue(const LispType& _type, const std::string& _value): type(_type), value(_value), cells() {}
+    int to_int() const;
 };
 
-void cout_lispvalue(const LispValue& value);
+std::ostream& operator<<(std::ostream& os, const LispValue& value);
+
 
 #endif // _LISPVALUE_HPP_
