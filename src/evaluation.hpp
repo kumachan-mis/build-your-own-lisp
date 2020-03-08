@@ -5,6 +5,7 @@
 #include "lispvalue.hpp"
 
 
-LispValue evaluate(LispValue& value);
+LispEnvironment global_environment();
+LispValue evaluate(LispValue& value, LispEnvironment& environment);
 
 #endif  // _EVALUATION_HPP_

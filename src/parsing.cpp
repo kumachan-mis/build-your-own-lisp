@@ -6,6 +6,9 @@
 
 LispValue ast_to_lispvalue(mpc_ast_t* ast) {
      std::string tag(ast->tag);
+     if (tag.find("unit") != std::string::npos) {
+        return LispValue(LispType::Unit);
+    }
     if (tag.find("number") != std::string::npos) {
         return LispValue(LispType::Number, ast->contents);
     }

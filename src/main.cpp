@@ -10,6 +10,7 @@
 
 
 int main(int argc, char* argv[]) {
+    mpc_parser_t* Unit   = mpc_new("unit");
     mpc_parser_t* Number = mpc_new("number");
     mpc_parser_t* Symbol = mpc_new("symbol");
     mpc_parser_t* Sexpr  = mpc_new("sexpr");
@@ -17,18 +18,21 @@ int main(int argc, char* argv[]) {
     mpc_parser_t* Expr   = mpc_new("expr");
     mpc_parser_t* Lispy  = mpc_new("lispy");
 
-    mpca_lang(MPCA_LANG_DEFAULT,
-        "                                                          \
-            number : /-?[0-9]+/ ;                                  \
-            symbol : \"list\" | \"head\" | \"tail\" | \"join\"     \
-                   | \"eval\" | \"cons\" | \"len\"                 \
-                   | '+' | '-' | '*' | '/' ;                       \
-            sexpr  : '(' <expr>* ')' ;                             \
-            qexpr  : '{' <expr>* '}' ;                             \
-            expr   : <number> | <symbol> | <sexpr> | <qexpr> ;     \
-            lispy  : /^/ <expr>* /$/ ;                             \
+    mpca_lang(
+        MPCA_LANG_DEFAULT,
+        "                                                                \
+            unit   : '(' ')' ;                                           \
+            number : /-?[0-9]+/ ;                                        \
+            symbol : /[a-zA-Z0-9_+\\-*\\/\\\\=<>!&]+/ ;                  \
+            sexpr  : '(' <expr>+ ')' ;                                   \
+            qexpr  : '{' <expr>* '}' ;                                   \
+            expr   : <unit> | <number> | <symbol> | <sexpr> | <qexpr> ;  \
+            lispy  : /^/ <expr>* /$/ ;                                   \
         ",
-    Number, Symbol, Sexpr, Qexpr, Expr, Lispy);
+        Number, Symbol, Unit, Sexpr, Qexpr, Expr, Lispy
+    );
+
+    LispEnvironment global_env = global_environment();
 
     std::cout << "Build Your Own Lisp" << std::endl;
     std::cout << "Press ctrl+c to Exit" << std::endl;
@@ -40,7 +44,7 @@ int main(int argc, char* argv[]) {
         if (mpc_parse("<stdin>", input.get(), Lispy, &r)) {
             try {
                 LispValue value = ast_to_lispvalue((mpc_ast_t*)r.output);
-                std::cout << evaluate(value) << std::endl;
+                std::cout << evaluate(value, global_env) << std::endl;
             } catch (const std::exception& exception) {
                 std::cerr << exception.what() << std::endl;
             }
@@ -50,6 +54,6 @@ int main(int argc, char* argv[]) {
             mpc_err_delete(r.error);
         }
     }
-    mpc_cleanup(6, Number, Symbol, Sexpr, Qexpr, Expr, Lispy);
+    mpc_cleanup(7, Number, Symbol, Unit, Sexpr, Qexpr, Expr, Lispy);
     return 0;
 }
