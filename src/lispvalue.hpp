@@ -8,71 +8,127 @@
 #include <unordered_map>
 
 
-enum struct LispType {
+enum class LispType {
     Unit,
     Number,
     Symbol,
-    Function,
+    BuiltinFunction,
+    LambdaFunction,
     S_Expression,
     Q_Expression
 };
 
 struct LispValue;
 struct LispEnvironment;
-typedef std::function<LispValue(const std::vector<LispValue>&, LispEnvironment&)> LispBuiltinFunction;
-
-struct LispValue {
-    LispType type;
-    std::string value;
-    LispBuiltinFunction function;
-    std::vector<LispValue> cells;
-
-    LispValue(const LispType& _type = LispType::Unit): type(_type), value(), cells() {}
-    LispValue(const LispType& _type, const std::string& _value): type(_type), value(_value), cells() {}
-    int to_int() const {
-        if (this->type != LispType::Number) {
-            throw std::invalid_argument("Error: argument type is not number");
-        }
-        try {
-            return std::stoi(this->value);
-        } catch (...) {
-            throw std::invalid_argument("Error: fail to convert argument to number");
-        }
-    }
+using  LispBuiltinFunction = std::function<LispValue(std::vector<LispValue>&, LispEnvironment&)>;
+class LispLambdaFunction {
+    std::vector<LispValue> argument_symbols;
+    LispValue* body_qexpr;
+    LispEnvironment* local_environment;
 };
+
+class LispValue {
+    public:
+        LispType type;
+        int number;
+        std::string symbol;
+        LispBuiltinFunction builtin_function;
+        LispLambdaFunction lambda_function;
+        std::vector<LispValue> expr_cells;
+
+        LispValue()
+        : type(LispType::Unit), number(), symbol(), builtin_function(), lambda_function(), expr_cells()
+        {}
+
+        LispValue(LispType _type, const int value) 
+        : type(_type), number(value), symbol(), builtin_function(), lambda_function(), expr_cells()
+        {
+            if (type != LispType::Number) {
+                throw std::invalid_argument("Error: type is not number");
+            }
+        }
+
+        LispValue(LispType _type, const std::string& value) 
+        : type(_type), number(), symbol(value), builtin_function(), lambda_function(), expr_cells()
+        {
+            if (type != LispType::Symbol) {
+                throw std::invalid_argument("Error: type is not symbol");
+            }
+        }
+
+        LispValue(LispType _type, const LispBuiltinFunction& value) 
+        : type(_type), number(), symbol(), builtin_function(value), lambda_function(), expr_cells()
+        {
+            if (type != LispType::BuiltinFunction) {
+                throw std::invalid_argument("Error: type is not built-in function");
+            }
+        }
+
+         LispValue(LispType _type, const LispLambdaFunction& value) 
+        : type(_type), number(), symbol(), builtin_function(), lambda_function(value), expr_cells()
+        {
+            if (type != LispType::LambdaFunction) {
+                throw std::invalid_argument("Error: type is not lambda function");
+            }
+        }
+
+        LispValue(LispType _type, const std::vector<LispValue>& value) 
+        : type(_type), number(), symbol(), builtin_function(), lambda_function(), expr_cells(value)
+        {
+            if (type != LispType::S_Expression && type != LispType::Q_Expression) {
+                throw std::invalid_argument("Error: type is not expression");
+            }
+        }
+    friend std::ostream& operator<<(std::ostream& os, const LispValue& value);
+};
+
 std::ostream& operator<<(std::ostream& os, const LispValue& value);
 
 struct LispEnvironment {
-    /*
-    Requires
-        symbol: type should be Lisptype::Symbol
-    */
-    LispValue find(const LispValue& symbol) const {
-        auto itr = map.find(symbol.value);
-        if (itr == map.end()) throw std::out_of_range("Error: unbound symbol \"" + symbol.value + "\"");
-        return itr->second;
-    }
+    public:
+        /*
+        Requires
+            symbol: type should be Lisptype::Symbol
+        */
+        LispValue find(const LispValue& symbol) const {
+            auto itr = _map.find(symbol.symbol);
+            if (itr == _map.end()) throw std::out_of_range("Error: unbound symbol \"" + symbol.symbol + "\"");
+            return itr->second;
+        }
 
-    LispValue find(const std::string& symbol) const {
-        auto itr = map.find(symbol);
-        if (itr == map.end()) throw std::out_of_range("Error: unbound symbol \"" + symbol + "\"");
-        return itr->second;
-    }
+        LispValue find(const std::string& symbol) const {
+            auto itr = _map.find(symbol);
+            if (itr == _map.end()) throw std::out_of_range("Error: unbound symbol \"" + symbol + "\"");
+            return itr->second;
+        }
 
-    /*
-    Requires
-        symbol: type should be Lisptype::Symbol
-    */
-    void define(const LispValue& symbol, const LispValue& value) {
-        map[symbol.value] = value;
-    }
+        /*
+        Requires
+            symbol: type should be Lisptype::Symbol
+        */
+        void define(const LispValue& symbol, const LispValue& value) {
+            _map[symbol.symbol] = value;
+        }
 
-    void define(const std::string& symbol, const LispValue& value) {
-        map[symbol] = value;
-    }
+        void define(const std::string& symbol, const LispValue& value) {
+            _map[symbol] = value;
+        }
+
+        /*
+        Requires
+            symbol: type should be Lisptype::Symbol
+        */
+        void erase(const LispValue& symbol) {
+            _map.erase(symbol.symbol);
+        }
+
+        void erase(const std::string& symbol) {
+            _map.erase(symbol);
+        }
 
     private:
-        std::unordered_map<std::string, LispValue> map;
+        std::unordered_map<std::string, LispValue> _map;
+        LispEnvironment* _parent_environment;
 };
 
 

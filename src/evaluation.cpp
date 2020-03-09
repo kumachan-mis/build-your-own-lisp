@@ -32,6 +32,7 @@ LispEnvironment global_environment() {
     add_builtin_function("len",  builtin_len,  environment);
 
     add_builtin_function("def",  builtin_def,  environment);
+    add_builtin_function("del",  builtin_del,  environment);
 
     add_builtin_function("exit",  builtin_exit,  environment);
 
@@ -48,7 +49,7 @@ LispValue evaluate(LispValue& value, LispEnvironment& environment) {
             return value;
         case LispType::Symbol:
             return evaluate_symbol(value, environment);
-        case LispType::Function:
+        case LispType::BuiltinFunction:
             /* Already evaluated */
             return value;
         case LispType::S_Expression:
@@ -67,8 +68,7 @@ inline void add_builtin_function(
     const LispBuiltinFunction& function,
     LispEnvironment& environment
 ) {
-    LispValue value(LispType::Function, name);
-    value.function = function;
+    LispValue value(LispType::BuiltinFunction, function);
     environment.define(name, value);
 }
 
@@ -77,17 +77,17 @@ inline LispValue evaluate_symbol(LispValue& value, LispEnvironment& environment)
 }
 
 inline LispValue evaluate_sexpr(LispValue& value, LispEnvironment& environment) {
-    const int num_cells = value.cells.size();
+    const int num_cells = value.expr_cells.size();
     for (int index = 0; index < num_cells; index++) {
-        value.cells[index] = evaluate(value.cells[index], environment);
+        value.expr_cells[index] = evaluate(value.expr_cells[index], environment);
     }
-    if (num_cells == 1) return value.cells[0];
+    if (num_cells == 1) return value.expr_cells[0];
 
-    LispValue function = value.cells[0];
-    if (function.type != LispType::Function) {
+    LispValue function(value.expr_cells[0]);
+    if (function.type != LispType::BuiltinFunction && function.type != LispType::LambdaFunction) {
         throw std::invalid_argument("Error: S-Expression does not start with function");
     }
-    value.cells.erase(value.cells.begin());
-    value = function.function(value.cells, environment);
+    value.expr_cells.erase(value.expr_cells.begin());
+    value = function.builtin_function(value.expr_cells, environment);
     return value;
 }

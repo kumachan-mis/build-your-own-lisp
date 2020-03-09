@@ -11,14 +11,16 @@ std::ostream& operator<<(std::ostream& os, const LispValue& value) {
         case LispType::Unit:
             return os << "()";
         case LispType::Number:
+            return os << value.number;
         case LispType::Symbol:
-            return os << value.value;
-        case LispType::Function:
-            return os << "<function> " << value.value;
+            return os << value.symbol;
+        case LispType::BuiltinFunction:
+        case LispType::LambdaFunction:
+            return os << "<function>";
         case LispType::S_Expression:
-            return os << '(' << value.cells << ')';
+            return os << '(' << value.expr_cells << ')';
         case LispType::Q_Expression:
-            return os << '{' << value.cells << '}';
+            return os << '{' << value.expr_cells << '}';
         default:
             return os;
     }

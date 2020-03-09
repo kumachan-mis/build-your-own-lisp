@@ -1,3 +1,4 @@
+#include <vector>
 #include <string>
 #include <stdexcept>
 #include "lib/mpc.hpp"
@@ -7,10 +8,10 @@
 LispValue ast_to_lispvalue(mpc_ast_t* ast) {
      std::string tag(ast->tag);
      if (tag.find("unit") != std::string::npos) {
-        return LispValue(LispType::Unit);
+        return LispValue();
     }
     if (tag.find("number") != std::string::npos) {
-        return LispValue(LispType::Number, ast->contents);
+        return LispValue(LispType::Number, std::stoi(ast->contents));
     }
     if (tag.find("symbol") != std::string::npos) {
         return LispValue(LispType::Symbol, ast->contents);
@@ -25,7 +26,7 @@ LispValue ast_to_lispvalue(mpc_ast_t* ast) {
         throw std::invalid_argument("Error: unexpected tag \"" + tag + "\"");
     }
 
-    LispValue expr(expr_type);
+    std::vector<LispValue> cells;
     int children_num = ast->children_num;
     for (int index = 0; index < children_num; index++) {
         std::string child_contents(ast->children[index]->contents);
@@ -35,7 +36,7 @@ LispValue ast_to_lispvalue(mpc_ast_t* ast) {
             child_contents == "{" || child_contents == "}" ||
             child_tag == "regex"
         ) continue;
-        expr.cells.push_back(ast_to_lispvalue(ast->children[index]));
+        cells.push_back(ast_to_lispvalue(ast->children[index]));
     }
-    return expr;
+    return LispValue(expr_type, cells);
 }
