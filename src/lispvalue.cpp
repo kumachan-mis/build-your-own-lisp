@@ -1,7 +1,5 @@
 #include "lispvalue.hpp"
 #include <iostream>
-#include <vector>
-
 
 template<typename T>
 std::ostream& operator<<(std::ostream& os, const std::vector<T>& vector);
@@ -15,12 +13,13 @@ std::ostream& operator<<(std::ostream& os, const LispValue& value) {
         case LispType::Symbol:
             return os << value.symbol;
         case LispType::BuiltinFunction:
+            return os << "<built-in> " << value.symbol;
         case LispType::LambdaFunction:
-            return os << "<function>";
+            return os << "lambda " << value.cells[0] << ' ' << value.cells[1];
         case LispType::S_Expression:
-            return os << '(' << value.expr_cells << ')';
+            return os << '(' << value.cells << ')';
         case LispType::Q_Expression:
-            return os << '{' << value.expr_cells << '}';
+            return os << '{' << value.cells << '}';
         default:
             return os;
     }

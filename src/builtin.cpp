@@ -1,13 +1,12 @@
 #include "builtin.hpp"
-#include <algorithm>
-#include <limits>
-#include <stdexcept>
 #include "evaluation.hpp"
+#include <algorithm>
 
 
 LispValue _operator(
     std::vector<LispValue>& evaluated_arguments,
-    const std::function<int(int, int)>& op
+    const std::function<int(int, int)>& op,
+    const std::string& op_name
 );
 inline int _add(int x, int y);
 inline int _sub(int x, int y);
@@ -20,84 +19,56 @@ inline int _neg(int x);
 
 LispValue builtin_add(
     std::vector<LispValue>& evaluated_arguments,
-    LispEnvironment& environment
+    const std::shared_ptr<LispEnvironment>& environment
 ) {
-    size_t num_args = evaluated_arguments.size();
-    if (num_args < 1) {
-        throw std::invalid_argument("Error: function \"add\" takes 1 or more arguments");
-    }
-    if (num_args == 1) {
-        int result = evaluated_arguments[0].number;
-        return LispValue(LispType::Number, result);
-    }
-    return _operator(evaluated_arguments, _add);
+    return _operator(evaluated_arguments, _add, "add");
 }
 
 LispValue builtin_sub(
     std::vector<LispValue>& evaluated_arguments,
-    LispEnvironment& environment
+    const std::shared_ptr<LispEnvironment>& environment
 ) {
-     size_t num_args = evaluated_arguments.size();
-    if (num_args < 1) {
-        throw std::invalid_argument("Error: function \"sub\" takes one or more arguments");
-    }
-    if (num_args == 1) {
-        int result = _neg(evaluated_arguments[0].number);
-        return LispValue(LispType::Number, result);
-    }
-    return _operator(evaluated_arguments, _sub);
+    return _operator(evaluated_arguments, _sub, "sub");
 }
 
 LispValue builtin_mul(
     std::vector<LispValue>& evaluated_arguments,
-    LispEnvironment& environment
+    const std::shared_ptr<LispEnvironment>& environment
 ) {
-    if (evaluated_arguments.size() < 2) {
-        throw std::invalid_argument("Error: function \"mul\" takes two or more arguments");
-    }
-    return _operator(evaluated_arguments, _mul);
+    return _operator(evaluated_arguments, _mul, "mul");
 }
 
 LispValue builtin_div(
     std::vector<LispValue>& evaluated_arguments,
-    LispEnvironment& environment
+    const std::shared_ptr<LispEnvironment>& environment
 ) {
-    if (evaluated_arguments.size() < 2) {
-        throw std::invalid_argument("Error: function \"div\" takes two or more arguments");
-    }
-    return _operator(evaluated_arguments, _div);
+    return _operator(evaluated_arguments, _div, "div");
 }
 
 LispValue builtin_mod(
     std::vector<LispValue>& evaluated_arguments,
-    LispEnvironment& environment
+    const std::shared_ptr<LispEnvironment>& environment
 ) {
-    if (evaluated_arguments.size() < 2) {
-        throw std::invalid_argument("Error: function \"mod\" takes two or more arguments");
-    }
-    return _operator(evaluated_arguments, _mod);
+    return _operator(evaluated_arguments, _mod, "mod");
 }
 
 LispValue builtin_pow(
     std::vector<LispValue>& evaluated_arguments,
-    LispEnvironment& environment
+    const std::shared_ptr<LispEnvironment>& environment
 ) {
-    if (evaluated_arguments.size() < 2) {
-        throw std::invalid_argument("Error: function \"pow\" takes two or more arguments");
-    }
-    return _operator(evaluated_arguments, _pow);
+    return _operator(evaluated_arguments, _pow, "pow");
 }
 
 LispValue builtin_list(
     std::vector<LispValue>& evaluated_arguments,
-    LispEnvironment& environment
+    const std::shared_ptr<LispEnvironment>& environment
 ) {
     return LispValue(LispType::Q_Expression, evaluated_arguments);
 }
 
 LispValue builtin_head(
     std::vector<LispValue>& evaluated_arguments,
-    LispEnvironment& environment
+    const std::shared_ptr<LispEnvironment>& environment
 ) {
     if (evaluated_arguments.size() != 1) {
         throw std::invalid_argument("Error: function \"head\" takes one argument");
@@ -106,39 +77,38 @@ LispValue builtin_head(
     if (argument.type != LispType::Q_Expression) {
         throw std::invalid_argument("Error: function \"head\" takes Q-Expression");
     }
-    if (argument.expr_cells.size() == 0) {
+    if (argument.cells.size() == 0) {
         throw std::invalid_argument("Error: the argument is empty Q-Expression");
     }
-    argument.expr_cells = { argument.expr_cells[0] };
+    argument.cells = { argument.cells[0] };
     return argument;
 }
 
 LispValue builtin_tail(
     std::vector<LispValue>& evaluated_arguments,
-    LispEnvironment& environment
+    const std::shared_ptr<LispEnvironment>& environment
 ) {
     if (evaluated_arguments.size() != 1) {
-        throw std::invalid_argument("Error: function \"tail\" takes a argument");
+        throw std::invalid_argument("Error: function \"tail\" takes one argument");
     }
     LispValue& argument(evaluated_arguments[0]);
     if (argument.type != LispType::Q_Expression) {
         throw std::invalid_argument("Error: function \"tail\" takes Q-Expression");
     }
-    if (argument.expr_cells.size() == 0) {
+    if (argument.cells.size() == 0) {
         throw std::invalid_argument("Error: the argument is empty Q-Expression");
     }
-    argument.expr_cells.erase(argument.expr_cells.begin());
+    argument.cells.erase(argument.cells.begin());
     return argument;
 }
 
 LispValue builtin_join(
     std::vector<LispValue>& evaluated_arguments,
-    LispEnvironment& environment
+    const std::shared_ptr<LispEnvironment>& environment
 ) {
     if (evaluated_arguments.size() < 1) {
         throw std::invalid_argument("Error: function \"join\" takes one or more arguments");
     }
-
     if (
         !std::all_of(
             evaluated_arguments.begin(), evaluated_arguments.end(),
@@ -151,9 +121,9 @@ LispValue builtin_join(
         auto itr = evaluated_arguments.begin() + 1, end = evaluated_arguments.end();
         itr != end; itr++
     ) {
-        result.expr_cells.insert(
-            result.expr_cells.end(),
-            itr->expr_cells.begin(), itr->expr_cells.end()
+        result.cells.insert(
+            result.cells.end(),
+            itr->cells.begin(), itr->cells.end()
         );
     }
     return result;
@@ -161,7 +131,7 @@ LispValue builtin_join(
 
 LispValue builtin_eval(
     std::vector<LispValue>& evaluated_arguments,
-    LispEnvironment& environment
+    const std::shared_ptr<LispEnvironment>& environment
 ) {
     if (evaluated_arguments.size() != 1) {
         throw std::invalid_argument("Error: function \"eval\" takes one argument");
@@ -170,13 +140,15 @@ LispValue builtin_eval(
     if (argument.type != LispType::Q_Expression) {
         throw std::invalid_argument("Error: function \"eval\" takes Q-Expression");
     }
+    if (argument.cells.size() == 0) return LispValue();
+    
     argument.type = LispType::S_Expression;
     return evaluate(argument, environment);
 }
 
 LispValue builtin_cons(
     std::vector<LispValue>& evaluated_arguments,
-    LispEnvironment& environment
+    const std::shared_ptr<LispEnvironment>& environment
 ) {
     if (evaluated_arguments.size() != 2) {
         throw std::invalid_argument("Error: function \"cons\" takes two arguments");
@@ -186,13 +158,13 @@ LispValue builtin_cons(
     if (tail.type != LispType::Q_Expression) {
         throw std::invalid_argument("Error: second argument is expected to be Q-Expression");
     }
-    tail.expr_cells.insert(tail.expr_cells.begin(), head);
+    tail.cells.insert(tail.cells.begin(), head);
     return tail;
 }
 
 LispValue builtin_len(
     std::vector<LispValue>& evaluated_arguments,
-    LispEnvironment& environment
+    const std::shared_ptr<LispEnvironment>& environment
 ) {
     if (evaluated_arguments.size() != 1) {
         throw std::invalid_argument("Error: function \"len\" takes one argument");
@@ -201,18 +173,43 @@ LispValue builtin_len(
     if (argument.type != LispType::Q_Expression) {
         throw std::invalid_argument("Error: function \"len\" takes Q-Expression");
     }
-    return LispValue(LispType::Number, argument.expr_cells.size());
+    return LispValue(LispType::Number, argument.cells.size());
+}
+
+LispValue builtin_lambda(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment
+) {
+    if (evaluated_arguments.size() != 2) {
+        throw std::invalid_argument("Error: function \"lambda\" takes two arguments");
+    }
+    std::vector<LispValue>& params(evaluated_arguments[0].cells);
+    if (
+        evaluated_arguments[0].type != LispType::Q_Expression ||
+        !std::all_of(
+            params.begin(), params.end(),
+            [](const LispValue& symbol) { return symbol.type == LispType::Symbol; })
+    ) {
+        throw std::invalid_argument(
+            "Error: first argument is expected to be Q-Expression of zero or more symbols");
+    }
+    if (evaluated_arguments[1].type != LispType::Q_Expression) {
+        throw std::invalid_argument("Error: second argument is expected to be Q-Expression");
+    }
+
+    std::shared_ptr<LispEnvironment> local_environment(new LispEnvironment(environment));
+    return LispValue(LispType::LambdaFunction, evaluated_arguments, local_environment);
 }
 
 LispValue builtin_def(
     std::vector<LispValue>& evaluated_arguments,
-    LispEnvironment& environment
+    const std::shared_ptr<LispEnvironment>& environment
 ) {
     if (evaluated_arguments.size() < 2) {
         throw std::invalid_argument("Error: function \"def\" takes 2 or more arguments");
     }
 
-    const std::vector<LispValue>& symbols(evaluated_arguments[0].expr_cells);
+    const std::vector<LispValue>& symbols(evaluated_arguments[0].cells);
     if (
         evaluated_arguments[0].type != LispType::Q_Expression ||
         symbols.size() < 1 ||
@@ -220,29 +217,61 @@ LispValue builtin_def(
             symbols.begin(), symbols.end(),
             [](const LispValue& symbol) { return symbol.type == LispType::Symbol; })
     ) {
-        throw std::invalid_argument("Error: first argument is expected to be Q-Expression of symbols");
-    }
-    
+        throw std::invalid_argument(
+            "Error: first argument is expected to be Q-Expression of one or more symbols");
+    }  
     if (symbols.size() != evaluated_arguments.size() - 1) {
         throw std::invalid_argument("Error: cannot define incorrect number of values to symbols");
     }
 
     for (size_t index = 0; index < symbols.size(); index++) {
-        environment.define(symbols[index], evaluated_arguments[index + 1]);
+        environment->define(symbols[index], evaluated_arguments[index + 1]);
     }
     return LispValue();
 }
 
+LispValue builtin_defun(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment
+) {
+    if (evaluated_arguments.size() != 2) {
+        throw std::invalid_argument("Error: function \"defun\" takes two arguments");
+    }
+    std::vector<LispValue>& signiture(evaluated_arguments[0].cells);
+    if (
+        evaluated_arguments[0].type != LispType::Q_Expression ||
+        signiture.size() < 1 ||
+        !std::all_of(
+            signiture.begin(), signiture.end(),
+            [](const LispValue& symbol) { return symbol.type == LispType::Symbol; })
+    ) {
+        throw std::invalid_argument(
+            "Error: first argument is expected to be Q-Expression of one or more symbols");
+    }
+    if (evaluated_arguments[1].type != LispType::Q_Expression) {
+        throw std::invalid_argument("Error: second argument is expected to be Q-Expression");
+    }
+
+    LispValue symbol(signiture[0]);
+    signiture.erase(signiture.begin());
+
+    std::shared_ptr<LispEnvironment> local_environment(new LispEnvironment(environment));
+    environment->define(
+        symbol,
+        LispValue(LispType::LambdaFunction, evaluated_arguments, local_environment)
+    );
+    return LispValue();
+}
 
 LispValue builtin_del(
     std::vector<LispValue>& evaluated_arguments,
-    LispEnvironment& environment
+    const std::shared_ptr<LispEnvironment>& environment
 ) {
     if (evaluated_arguments.size() != 1) {
         throw std::invalid_argument("Error: function \"del\" takes one argument");
     }
 
-    const std::vector<LispValue>& symbols(evaluated_arguments[0].expr_cells);
+    const std::vector<LispValue>& symbols(evaluated_arguments[0].cells);
     if (
         evaluated_arguments[0].type != LispType::Q_Expression ||
         symbols.size() < 1 ||
@@ -250,41 +279,52 @@ LispValue builtin_del(
             symbols.begin(), symbols.end(),
             [](const LispValue& symbol) { return symbol.type == LispType::Symbol; })
     ) {
-        throw std::invalid_argument("Error: first argument is expected to be Q-Expression of symbols");
+        throw std::invalid_argument(
+            "Error: first argument is expected to be Q-Expression of one or more symbols");
     }
 
     for (size_t index = 0; index < symbols.size(); index++) {
-        environment.erase(symbols[index]);
+        environment->erase(symbols[index]);
     }
     return LispValue();
 }
 
 LispValue builtin_exit(
     std::vector<LispValue>& evaluated_arguments,
-    LispEnvironment& environment
+    const std::shared_ptr<LispEnvironment>& environment
 ) {
-    if (evaluated_arguments.size() != 1) {
-        throw std::invalid_argument("Error: function \"exit\" takes one argument");
+    size_t num_args = evaluated_arguments.size();
+    if (num_args != 0 && num_args != 1) {
+        throw std::invalid_argument("Error: function \"exit\" takes zero or one argument");
     }
+
     const LispValue& argument(evaluated_arguments[0]);
-    if (argument.type == LispType::Unit) {
+    if (num_args == 0) {
         exit(0);
     } else if (argument.type == LispType::Number) {
         exit(argument.number);
     } else {
-        throw std::invalid_argument("Error: function \"len\" takes Unit or Number");
+        throw std::invalid_argument("Error: function \"exit\" takes number");
     }
 }
 
 
-/*
-Requires
-    evaluated_arguments: size should be 2 or more
-*/
 LispValue _operator(
     std::vector<LispValue>& evaluated_arguments,
-    const std::function<int(int, int)>& op
+    const std::function<int(int, int)>& op,
+    const std::string& op_name
 ) {
+    if (evaluated_arguments.size() < 2) {
+        throw std::invalid_argument("Error: function \"" + op_name + "\" takes two or more arguments");
+    }
+    if (
+        !std::all_of(
+            evaluated_arguments.begin(), evaluated_arguments.end(),
+            [](const LispValue& argument) { return argument.type == LispType::Number; })
+    ) {
+        throw std::invalid_argument("Error: function \"" + op_name + "\" takes numbers");
+    }
+
     int result = evaluated_arguments[0].number;
     for (
         auto itr = evaluated_arguments.begin() + 1, end = evaluated_arguments.end();

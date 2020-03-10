@@ -1,6 +1,3 @@
-#include <vector>
-#include <string>
-#include <stdexcept>
 #include "lib/mpc.hpp"
 #include "lispvalue.hpp"
 
@@ -11,7 +8,13 @@ LispValue ast_to_lispvalue(mpc_ast_t* ast) {
         return LispValue();
     }
     if (tag.find("number") != std::string::npos) {
-        return LispValue(LispType::Number, std::stoi(ast->contents));
+        int number = 0;
+        try {
+            number = std::stoi(ast->contents);
+        } catch (std::exception&) {
+            throw std::invalid_argument("Error: fail to convert to number");
+        }
+        return LispValue(LispType::Number, number);
     }
     if (tag.find("symbol") != std::string::npos) {
         return LispValue(LispType::Symbol, ast->contents);

@@ -1,6 +1,4 @@
 #include <iostream>
-#include <vector>
-#include <memory>
 #include <editline/readline.h>
 #include "lib/mpc.hpp"
 
@@ -23,7 +21,7 @@ int main(int argc, char* argv[]) {
         "                                                                \
             unit   : '(' ')' ;                                           \
             number : /-?[0-9]+/ ;                                        \
-            symbol : /[a-zA-Z0-9_+\\-*\\/\\\\=<>!&]+/ ;                  \
+            symbol : /[a-zA-Z0-9_+\\-*\\/\\\\=<>!&^]+/ ;                 \
             sexpr  : '(' <expr>+ ')' ;                                   \
             qexpr  : '{' <expr>* '}' ;                                   \
             expr   : <unit> | <number> | <symbol> | <sexpr> | <qexpr> ;  \
@@ -32,7 +30,7 @@ int main(int argc, char* argv[]) {
         Number, Symbol, Unit, Sexpr, Qexpr, Expr, Lispy
     );
 
-    LispEnvironment global_env = global_environment();
+    std::shared_ptr<LispEnvironment> global_env = global_environment();
 
     std::cout << "Build Your Own Lisp" << std::endl;
     std::cout << "Press ctrl+c to Exit" << std::endl;

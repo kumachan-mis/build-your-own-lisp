@@ -5,7 +5,10 @@
 #include "lispvalue.hpp"
 
 
-LispEnvironment global_environment();
-LispValue evaluate(LispValue& value, LispEnvironment& environment);
+std::shared_ptr<LispEnvironment> global_environment();
+LispValue evaluate(
+    LispValue& value,
+    const std::shared_ptr<LispEnvironment>& environment
+);
 
 #endif  // _EVALUATION_HPP_
