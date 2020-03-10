@@ -36,6 +36,40 @@ LispValue builtin_pow(
     const std::shared_ptr<LispEnvironment>& environment
 );
 
+LispValue builtin_if(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment
+);
+
+LispValue builtin_eq(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment
+);
+
+LispValue builtin_neq(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment
+);
+
+LispValue builtin_gt(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment
+);
+
+LispValue builtin_geq(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment
+);
+
+LispValue builtin_lt(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment
+);
+
+LispValue builtin_leq(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment
+);
 
 LispValue builtin_list(
     std::vector<LispValue>& evaluated_arguments,

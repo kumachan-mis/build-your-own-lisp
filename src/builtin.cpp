@@ -3,7 +3,7 @@
 #include <algorithm>
 
 
-LispValue _operator(
+inline LispValue _operator(
     std::vector<LispValue>& evaluated_arguments,
     const std::function<int(int, int)>& op,
     const std::string& op_name
@@ -14,7 +14,16 @@ inline int _mul(int x, int y);
 inline int _div(int x, int y);
 inline int _mod(int x, int y);
 inline int _pow(int x, int y);
-inline int _neg(int x);
+
+inline LispValue _order(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::function<int(int, int)>& order,
+    const std::string& order_name
+);
+inline int _gt(int x, int y);
+inline int _geq(int x, int y);
+inline int _lt(int x, int y);
+inline int _leq(int x, int y);
 
 
 LispValue builtin_add(
@@ -57,6 +66,86 @@ LispValue builtin_pow(
     const std::shared_ptr<LispEnvironment>& environment
 ) {
     return _operator(evaluated_arguments, _pow, "pow");
+}
+
+LispValue builtin_if(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment
+) {
+    if (evaluated_arguments.size() != 3) {
+        throw std::invalid_argument("Error: function \"if\" takes three arguments");
+    }
+    const LispValue& condition(evaluated_arguments[0]);
+    if (condition.type != LispType::Number) {
+        throw std::invalid_argument("Error: first argument is expected to be number");
+    }
+    LispValue& then_qexpr(evaluated_arguments[1]);
+    LispValue& else_qexpr(evaluated_arguments[2]);
+    if (
+        then_qexpr.type != LispType::Q_Expression ||
+        else_qexpr.type != LispType::Q_Expression
+    ) {
+        throw std::invalid_argument(
+            "Error: second and third argument is expected to be Q-Expression");
+    }
+
+    if (condition.number) {
+        then_qexpr.type = LispType::S_Expression;
+        return evaluate(then_qexpr, environment);
+    } else {
+        else_qexpr.type = LispType::S_Expression;
+        return evaluate(else_qexpr, environment);
+    }
+}
+
+LispValue builtin_eq(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment
+) {
+    if (evaluated_arguments.size() != 2) {
+        throw std::invalid_argument("Error: order \"eq\" takes two arguments");
+    }
+
+    return LispValue(LispType::Number, evaluated_arguments[0] == evaluated_arguments[1]);
+}
+
+LispValue builtin_neq(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment
+) {
+    if (evaluated_arguments.size() != 2) {
+        throw std::invalid_argument("Error: order \"neq\" takes two arguments");
+    }
+
+    return LispValue(LispType::Number, evaluated_arguments[0] != evaluated_arguments[1]);
+}
+
+LispValue builtin_gt(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment
+) {
+    return _order(evaluated_arguments, _gt, "gt");
+}
+
+LispValue builtin_geq(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment
+) {
+    return _order(evaluated_arguments, _geq, "geq");
+}
+
+LispValue builtin_lt(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment
+) {
+    return _order(evaluated_arguments, _lt, "lt");
+}
+
+LispValue builtin_leq(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment
+) {
+    return _order(evaluated_arguments, _lt, "leq");
 }
 
 LispValue builtin_list(
@@ -121,10 +210,7 @@ LispValue builtin_join(
         auto itr = evaluated_arguments.begin() + 1, end = evaluated_arguments.end();
         itr != end; itr++
     ) {
-        result.cells.insert(
-            result.cells.end(),
-            itr->cells.begin(), itr->cells.end()
-        );
+        result.cells.insert(result.cells.end(), itr->cells.begin(), itr->cells.end());
     }
     return result;
 }
@@ -140,8 +226,7 @@ LispValue builtin_eval(
     if (argument.type != LispType::Q_Expression) {
         throw std::invalid_argument("Error: function \"eval\" takes Q-Expression");
     }
-    if (argument.cells.size() == 0) return LispValue();
-    
+
     argument.type = LispType::S_Expression;
     return evaluate(argument, environment);
 }
@@ -309,20 +394,20 @@ LispValue builtin_exit(
 }
 
 
-LispValue _operator(
+inline LispValue _operator(
     std::vector<LispValue>& evaluated_arguments,
     const std::function<int(int, int)>& op,
     const std::string& op_name
 ) {
     if (evaluated_arguments.size() < 2) {
-        throw std::invalid_argument("Error: function \"" + op_name + "\" takes two or more arguments");
+        throw std::invalid_argument("Error: operator \"" + op_name + "\" takes two or more arguments");
     }
     if (
         !std::all_of(
             evaluated_arguments.begin(), evaluated_arguments.end(),
             [](const LispValue& argument) { return argument.type == LispType::Number; })
     ) {
-        throw std::invalid_argument("Error: function \"" + op_name + "\" takes numbers");
+        throw std::invalid_argument("Error: operator \"" + op_name + "\" takes numbers");
     }
 
     int result = evaluated_arguments[0].number;
@@ -406,10 +491,38 @@ inline int _mod(int x, int y) {
     return ret;
 }
 
-inline int _neg(int x) {
-    std::numeric_limits<int> limits;
-    if (x == limits.min()) {
-        throw std::overflow_error("Error: overflow occurs");
+inline LispValue _order(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::function<int(int, int)>& order,
+    const std::string& order_name
+) {
+    if (evaluated_arguments.size() != 2) {
+        throw std::invalid_argument("Error: order \"" + order_name + "\" takes two arguments");
     }
-    return -x;
+    if (
+        !std::all_of(
+            evaluated_arguments.begin(), evaluated_arguments.end(),
+            [](const LispValue& argument) { return argument.type == LispType::Number; })
+    ) {
+        throw std::invalid_argument("Error: order \"" + order_name + "\" takes numbers");
+    }
+
+    int result = order(evaluated_arguments[0].number, evaluated_arguments[1].number);
+    return LispValue(LispType::Number, result);
+}
+
+inline int _gt(int x, int y) {
+    return x > y;
+}
+
+inline int _geq(int x, int y) {
+    return x >= y;
+}
+
+inline int _lt(int x, int y) {
+    return x < y;
+}
+
+inline int _leq(int x, int y) {
+    return x < y;
 }

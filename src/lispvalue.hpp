@@ -81,9 +81,9 @@ class LispValue {
             }
         }
     friend std::ostream& operator<<(std::ostream& os, const LispValue& value);
+    friend bool operator ==(const LispValue & x, const LispValue& y);
+    friend bool operator !=(const LispValue & x, const LispValue& y);
 };
-
-std::ostream& operator<<(std::ostream& os, const LispValue& value);
 
 struct LispEnvironment {
     public:
