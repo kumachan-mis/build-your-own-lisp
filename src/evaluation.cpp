@@ -39,20 +39,23 @@ std::shared_ptr<LispEnvironment> global_environment() {
     add_builtin_function("cons", builtin_cons, environment);
     add_builtin_function("len",  builtin_len,  environment);
 
-    add_builtin_function("if", builtin_if, environment);
-    add_builtin_function("==", builtin_eq, environment);
+    add_builtin_function("if", builtin_if,  environment);
+    add_builtin_function("==", builtin_eq,  environment);
     add_builtin_function("!=", builtin_neq, environment);
-    add_builtin_function(">", builtin_gt, environment);
+    add_builtin_function(">",  builtin_gt,  environment);
     add_builtin_function(">=", builtin_geq, environment);
-    add_builtin_function("<", builtin_lt, environment);
+    add_builtin_function("<",  builtin_lt,  environment);
     add_builtin_function("<=", builtin_leq, environment);
+    add_builtin_function("&&", builtin_and, environment);
+    add_builtin_function("||", builtin_or,  environment);
+    add_builtin_function("!" , builtin_not, environment);
 
     add_builtin_function("lambda", builtin_lambda, environment);
     add_builtin_function("def",    builtin_def,    environment);
     add_builtin_function("defun",  builtin_defun,  environment);
     add_builtin_function("del",    builtin_del,    environment);
 
-    add_builtin_function("exit",  builtin_exit,  environment);
+    add_builtin_function("exit", builtin_exit, environment);
 
     return environment;
 }
@@ -122,13 +125,6 @@ inline LispValue evaluate_sexpr(
     value.cells.erase(value.cells.begin());
     if (value.cells.size() == 1 && value.cells[0].type == LispType::Unit) {
         value.cells.clear();
-    } else if (
-        std::any_of(
-            value.cells.begin(), value.cells.end(),
-            [](const LispValue& cell) { return cell.type == LispType::Unit; }
-        )
-    ) {
-        throw std::invalid_argument("Error: unexpected unit type object in function arguments");
     }
 
     if (function.type == LispType::BuiltinFunction) {

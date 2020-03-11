@@ -21,7 +21,7 @@ int main(int argc, char* argv[]) {
         "                                                                \
             unit   : '(' ')' ;                                           \
             number : /-?[0-9]+/ ;                                        \
-            symbol : /[a-zA-Z0-9_+\\-*\\/\\\\=<>!&^]+/ ;                 \
+            symbol : /[a-zA-Z0-9_+\\-*%=<>&|!]+/ ;                       \
             sexpr  : '(' <expr>+ ')' ;                                   \
             qexpr  : '{' <expr>* '}' ;                                   \
             expr   : <unit> | <number> | <symbol> | <sexpr> | <qexpr> ;  \
@@ -39,17 +39,23 @@ int main(int argc, char* argv[]) {
         std::unique_ptr<char> input(readline("lisp>> "));
         add_history(input.get());
         mpc_result_t r;
+        LispValue value;
         if (mpc_parse("<stdin>", input.get(), Lispy, &r)) {
-            try {
-                LispValue value = ast_to_lispvalue((mpc_ast_t*)r.output);
-                std::cout << evaluate(value, global_env) << std::endl;
-            } catch (const std::exception& exception) {
-                std::cerr << exception.what() << std::endl;
-            }
+            value = ast_to_lispvalue((mpc_ast_t*)r.output);
             mpc_ast_delete((mpc_ast_t*)r.output);
         } else {
             mpc_err_print(r.error);
             mpc_err_delete(r.error);
+            continue;
+        }
+        try {
+            value = evaluate(value, global_env);
+        } catch (const std::exception& exception) {
+            std::cerr << exception.what() << std::endl;
+            continue;
+        }
+        if (value.type != LispType::Unit) {
+            std::cout << value << std::endl;
         }
     }
     mpc_cleanup(7, Number, Symbol, Unit, Sexpr, Qexpr, Expr, Lispy);

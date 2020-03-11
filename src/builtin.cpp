@@ -20,10 +20,18 @@ inline LispValue _order(
     const std::function<int(int, int)>& order,
     const std::string& order_name
 );
+inline LispValue _order(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::function<int(int)>& order,
+    const std::string& order_name
+);
 inline int _gt(int x, int y);
 inline int _geq(int x, int y);
 inline int _lt(int x, int y);
 inline int _leq(int x, int y);
+inline int _and(int x, int y);
+inline int _or(int x, int y);
+inline int _not(int x);
 
 
 LispValue builtin_add(
@@ -146,6 +154,27 @@ LispValue builtin_leq(
     const std::shared_ptr<LispEnvironment>& environment
 ) {
     return _order(evaluated_arguments, _lt, "leq");
+}
+
+LispValue builtin_and(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment
+) {
+    return _order(evaluated_arguments, _and, "and");
+}
+
+LispValue builtin_or(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment
+) {
+    return _order(evaluated_arguments, _or, "or");
+}
+
+LispValue builtin_not(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment
+) {
+    return _order(evaluated_arguments, _not, "not");
 }
 
 LispValue builtin_list(
@@ -511,6 +540,22 @@ inline LispValue _order(
     return LispValue(LispType::Number, result);
 }
 
+inline LispValue _order(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::function<int(int)>& order,
+    const std::string& order_name
+) {
+    if (evaluated_arguments.size() != 1) {
+        throw std::invalid_argument("Error: order \"" + order_name + "\" takes one argument");
+    }
+    if (evaluated_arguments[0].type != LispType::Number) {
+        throw std::invalid_argument("Error: order \"" + order_name + "\" takes a number");
+    }
+
+    int result = order(evaluated_arguments[0].number);
+    return LispValue(LispType::Number, result);
+}
+
 inline int _gt(int x, int y) {
     return x > y;
 }
@@ -525,4 +570,16 @@ inline int _lt(int x, int y) {
 
 inline int _leq(int x, int y) {
     return x < y;
+}
+
+inline int _and(int x, int y) {
+    return x && y;
+}
+
+inline int _or(int x, int y) {
+    return x || y;
+}
+
+inline int _not(int x) {
+    return !x;
 }
