@@ -1,3 +1,5 @@
+#include "evaluation.hpp"
+
 #include <algorithm>
 #include "builtin.hpp"
 #include "lispvalue.hpp"

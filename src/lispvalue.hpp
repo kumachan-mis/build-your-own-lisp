@@ -23,7 +23,9 @@ enum class LispType {
 
 class LispValue;
 class LispEnvironment;
-using  LispBuiltinFunction = std::function<LispValue(std::vector<LispValue>&, const std::shared_ptr<LispEnvironment>&)>;
+using  LispBuiltinFunction = std::function<
+    LispValue(std::vector<LispValue>&, const std::shared_ptr<LispEnvironment>&)
+>;
 
 class LispValue {
     public:
@@ -192,6 +194,5 @@ class LispEnvironment {
         std::unordered_map<std::string, LispValue> _map;
         std::shared_ptr<LispEnvironment> _parent_environment;
 };
-
 
 #endif // _LISPVALUE_HPP_

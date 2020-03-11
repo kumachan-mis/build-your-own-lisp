@@ -1,6 +1,7 @@
 #include "builtin.hpp"
-#include "evaluation.hpp"
+
 #include <algorithm>
+#include "evaluation.hpp"
 
 
 inline LispValue _operator(

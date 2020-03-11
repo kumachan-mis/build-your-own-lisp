@@ -1,9 +1,12 @@
 #include "lispvalue.hpp"
+
 #include <iostream>
 #include <algorithm>
 
+
 template<typename T>
 std::ostream& operator<<(std::ostream& os, const std::vector<T>& vector);
+
 
 std::ostream& operator<<(std::ostream& os, const LispValue& value) {
     switch (value.type) {
