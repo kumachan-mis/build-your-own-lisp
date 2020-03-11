@@ -4,7 +4,7 @@
 
 LispValue ast_to_lispvalue(mpc_ast_t* ast) {
      std::string tag(ast->tag);
-     if (tag.find("unit") != std::string::npos) {
+    if (tag.find("unit") != std::string::npos) {
         return LispValue();
     }
     if (tag.find("number") != std::string::npos) {
@@ -15,6 +15,11 @@ LispValue ast_to_lispvalue(mpc_ast_t* ast) {
             throw std::invalid_argument("Error: fail to convert to number");
         }
         return LispValue(LispType::Number, number);
+    }
+    if (tag.find("string") != std::string::npos) {
+        std::string str(ast->contents);
+        str = str.substr(1, str.length() - 2);
+        return LispValue(LispType::String, str);
     }
     if (tag.find("symbol") != std::string::npos) {
         return LispValue(LispType::Symbol, ast->contents);

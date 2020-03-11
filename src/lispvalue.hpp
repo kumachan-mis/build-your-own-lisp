@@ -13,11 +13,12 @@
 enum class LispType {
     Unit,
     Number,
+    String,
     Symbol,
     BuiltinFunction,
     LambdaFunction,
     S_Expression,
-    Q_Expression
+    Q_Expression,
 };
 
 struct LispValue;
@@ -28,58 +29,102 @@ class LispValue {
     public:
         LispType type;
         int number;
+        std::string str;
         std::string symbol;
         LispBuiltinFunction builtin_function;
         std::shared_ptr<LispEnvironment> local_environment;
         std::vector<LispValue> cells;
 
-        LispValue()
-        : type(LispType::Unit), number(), symbol(), builtin_function(), local_environment(), cells()
+        LispValue():
+        type(LispType::Unit),
+        number(),
+        str(),
+        symbol(),
+        builtin_function(),
+        local_environment(),
+        cells()
         {}
 
-        LispValue(LispType _type, const int value) 
-        : type(_type), number(value), symbol(), builtin_function(), local_environment(), cells()
+        LispValue(const LispType& _type, const int value):
+        type(_type),
+        number(value),
+        str(),
+        symbol(),
+        builtin_function(),
+        local_environment(),
+        cells()
         {
             if (type != LispType::Number) {
                 throw std::invalid_argument("Error: type is not number");
             }
         }
 
-        LispValue(LispType _type, const std::string& value) 
-        : type(_type), number(), symbol(value), builtin_function(), local_environment(), cells()
+        LispValue(const LispType& _type, const std::string& value):
+        type(_type),
+        number(),
+        str(_type == LispType::String? value : std::string()),
+        symbol(_type == LispType::Symbol? value : std::string()),
+        builtin_function(),
+        local_environment(),
+        cells()
         {
-            if (type != LispType::Symbol) {
-                throw std::invalid_argument("Error: type is not symbol");
+            if (type != LispType::String && type != LispType::Symbol) {
+                throw std::invalid_argument("Error: type is neither string nor symbol");
             }
         }
 
-        LispValue(LispType _type, const LispBuiltinFunction& value, const std::string& _symbol) 
-        : type(_type), number(), symbol(_symbol), builtin_function(value), local_environment(), cells()
+        LispValue(
+            const LispType& _type,
+            const LispBuiltinFunction& value,
+            const std::string& _symbol
+        ):
+        type(_type),
+        number(),
+        str(),
+        symbol(_symbol),
+        builtin_function(value),
+        local_environment(),
+        cells()
         {
             if (type != LispType::BuiltinFunction) {
                 throw std::invalid_argument("Error: type is not built-in function");
             }
         }
 
-         LispValue(
-             LispType _type,
-             const std::vector<LispValue>& args_and_body,
-             const std::shared_ptr<LispEnvironment>& environment
-        ) 
-        : type(_type), number(), symbol(), builtin_function(), local_environment(environment), cells(args_and_body)
+        LispValue(
+            const LispType& _type,
+            const std::vector<LispValue>& value,
+            const std::shared_ptr<LispEnvironment>& environment
+        ):
+        type(_type),
+        number(),
+        str(),
+        symbol(),
+        builtin_function(),
+        local_environment(environment),
+        cells(value)
         {
             if (type != LispType::LambdaFunction) {
                 throw std::invalid_argument("Error: type is not lambda function");
             }
         }
 
-        LispValue(LispType _type, const std::vector<LispValue>& value) 
-        : type(_type), number(), symbol(), builtin_function(), local_environment(), cells(value)
+        LispValue(const LispType& _type, const std::vector<LispValue>& value):
+        type(_type),
+        number(),
+        str(),
+        symbol(),
+        builtin_function(),
+        local_environment(),
+        cells(value)
         {
             if (type != LispType::S_Expression && type != LispType::Q_Expression) {
                 throw std::invalid_argument("Error: type is not expression");
             }
         }
+
+        std::string type_name() const;
+
     friend std::ostream& operator<<(std::ostream& os, const LispValue& value);
     friend bool operator ==(const LispValue & x, const LispValue& y);
     friend bool operator !=(const LispValue & x, const LispValue& y);
@@ -93,21 +138,17 @@ struct LispEnvironment {
         : _map(), _parent_environment(parent)
         {}
 
-        LispValue find(const LispValue& symbol) const {
+        LispValue resolve(const LispValue& symbol) const {
             if (symbol.type != LispType::Symbol) {
                 throw std::invalid_argument("Error: type is not symbol");
             }
-      
-            auto itr = _map.find(symbol.symbol);
-            if (itr != _map.end()) return itr->second;
-            else if (_parent_environment) return _parent_environment->find(symbol);
-            throw std::out_of_range("Error: unbound symbol \"" + symbol.symbol + "\"");
+            return resolve(symbol.symbol);
         }
 
-        LispValue find(const std::string& symbol) const {
+        LispValue resolve(const std::string& symbol) const {
             auto itr = _map.find(symbol);
             if (itr != _map.end()) return itr->second;
-            else if (_parent_environment) return _parent_environment->find(symbol);
+            else if (_parent_environment) return _parent_environment->resolve(symbol);
             throw std::out_of_range("Error: unbound symbol \"" + symbol + "\"");
         }
 
@@ -115,40 +156,24 @@ struct LispEnvironment {
             if (symbol.type != LispType::Symbol) {
                 throw std::invalid_argument("Error: type is not symbol");
             }
-
-            if (!_parent_environment) {
-                _map[symbol.symbol] = value;
-            } else {
-                _parent_environment->define(symbol, value);
-            }
+            define(symbol.symbol, value);
         }
 
         void define(const std::string& symbol, const LispValue& value) {
-            if (!_parent_environment) {
-                _map[symbol] = value;
-            } else {
-                _parent_environment->define(symbol, value);
-            }
+            if (!_parent_environment) _map[symbol] = value;
+            else _parent_environment->define(symbol, value);
         }
 
         void erase(const LispValue& symbol) {
             if (symbol.type != LispType::Symbol) {
                 throw std::invalid_argument("Error: type is not symbol");
             }
-
-            if (!_parent_environment) {
-                _map.erase(symbol.symbol);
-            } else {
-                _parent_environment->erase(symbol);
-            }
+            erase(symbol.symbol);
         }
 
         void erase(const std::string& symbol) {
-            if (!_parent_environment) {
-                _map.erase(symbol);
-            } else {
-                _parent_environment->erase(symbol);
-            }
+            if (!_parent_environment) _map.erase(symbol);
+            else _parent_environment->erase(symbol);
         }
 
         void assign(const LispValue& symbol, const LispValue& value) {

@@ -91,6 +91,11 @@ LispValue builtin_list(
     const std::shared_ptr<LispEnvironment>& environment
 );
 
+LispValue builtin_eval(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment
+);
+
 LispValue builtin_head(
     std::vector<LispValue>& evaluated_arguments,
     const std::shared_ptr<LispEnvironment>& environment
@@ -101,17 +106,12 @@ LispValue builtin_tail(
     const std::shared_ptr<LispEnvironment>& environment
 );
 
-LispValue builtin_join(
-    std::vector<LispValue>& evaluated_arguments,
-    const std::shared_ptr<LispEnvironment>& environment
-);
-
-LispValue builtin_eval(
-    std::vector<LispValue>& evaluated_arguments,
-    const std::shared_ptr<LispEnvironment>& environment
-);
-
 LispValue builtin_cons(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment
+);
+
+LispValue builtin_join(
     std::vector<LispValue>& evaluated_arguments,
     const std::shared_ptr<LispEnvironment>& environment
 );
@@ -137,6 +137,11 @@ LispValue builtin_defun(
 );
 
 LispValue builtin_del(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment
+);
+
+LispValue builtin_type(
     std::vector<LispValue>& evaluated_arguments,
     const std::shared_ptr<LispEnvironment>& environment
 );

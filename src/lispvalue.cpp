@@ -11,6 +11,8 @@ std::ostream& operator<<(std::ostream& os, const LispValue& value) {
             return os << "()";
         case LispType::Number:
             return os << value.number;
+        case LispType::String:
+            return os << '\"' << value.str << '\"';
         case LispType::Symbol:
             return os << value.symbol;
         case LispType::BuiltinFunction:
@@ -26,15 +28,6 @@ std::ostream& operator<<(std::ostream& os, const LispValue& value) {
     }
 }
 
-template<typename T>
-std::ostream& operator<<(std::ostream& os, const std::vector<T>& vector) {
-    for (auto itr = vector.begin(), end = vector.end(); itr != end; itr++) {
-        os << *itr;
-        if (itr != end - 1) os << ' ';
-    }
-    return os;
-}
-
 bool operator ==(const LispValue & x, const LispValue& y) {
     if (x.type != y.type) return false;
     switch (x.type) {
@@ -42,6 +35,8 @@ bool operator ==(const LispValue & x, const LispValue& y) {
             return true;
         case LispType::Number:
             return x.number == y.number;
+        case LispType::String:
+            return x.str == y.str;
         case LispType::Symbol:
         case LispType::BuiltinFunction:
             return x.symbol == y.symbol;
@@ -49,8 +44,7 @@ bool operator ==(const LispValue & x, const LispValue& y) {
             return x.cells == y.cells && x.local_environment == y.local_environment;
         case LispType::S_Expression:
         case LispType::Q_Expression:
-            if (x.cells.size() != y.cells.size()) return false;
-            return std::equal(x.cells.begin(), x.cells.end(), y.cells.begin());
+            return x.cells == y.cells;
         default:
             throw std::invalid_argument("Error: Unknown type");
     }
@@ -58,4 +52,37 @@ bool operator ==(const LispValue & x, const LispValue& y) {
 
 bool operator !=(const LispValue & x, const LispValue& y) {
     return !(x == y);
+}
+
+std::string LispValue::type_name() const {
+    switch (type) {
+        case LispType::Unit:
+            return "Unit";
+        case LispType::Number:
+            return "Number";
+        case LispType::String:
+            return "String";
+        case LispType::Symbol:
+            return "Symbol";
+        case LispType::BuiltinFunction:
+            return "BuiltinFunction";
+        case LispType::LambdaFunction:
+            return "LambdaFunction";
+        case LispType::S_Expression:
+            return "S-Expression";
+        case LispType::Q_Expression:
+            return "Q-Expression";
+        default:
+            throw std::invalid_argument("Error: Unknown type");
+    }
+}
+
+
+template<typename T>
+std::ostream& operator<<(std::ostream& os, const std::vector<T>& vector) {
+    for (auto itr = vector.begin(), end = vector.end(); itr != end; itr++) {
+        os << *itr;
+        if (itr != end - 1) os << ' ';
+    }
+    return os;
 }

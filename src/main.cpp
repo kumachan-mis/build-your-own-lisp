@@ -10,6 +10,7 @@
 int main(int argc, char* argv[]) {
     mpc_parser_t* Unit   = mpc_new("unit");
     mpc_parser_t* Number = mpc_new("number");
+    mpc_parser_t* String = mpc_new("string");
     mpc_parser_t* Symbol = mpc_new("symbol");
     mpc_parser_t* Sexpr  = mpc_new("sexpr");
     mpc_parser_t* Qexpr  = mpc_new("qexpr");
@@ -18,16 +19,18 @@ int main(int argc, char* argv[]) {
 
     mpca_lang(
         MPCA_LANG_DEFAULT,
-        "                                                                \
-            unit   : '(' ')' ;                                           \
-            number : /-?[0-9]+/ ;                                        \
-            symbol : /[a-zA-Z0-9_+\\-*%=<>&|!]+/ ;                       \
-            sexpr  : '(' <expr>+ ')' ;                                   \
-            qexpr  : '{' <expr>* '}' ;                                   \
-            expr   : <unit> | <number> | <symbol> | <sexpr> | <qexpr> ;  \
-            lispy  : /^/ <expr>* /$/ ;                                   \
+        "                                                 \
+            unit   : '(' ')' ;                            \
+            number : /-?[0-9]+/ ;                         \
+            string  : /\"(\\\\.|[^\"])*\"/ ;              \
+            symbol : /[a-zA-Z0-9_+\\-*%=<>&|!]+/ ;        \
+            sexpr  : '(' <expr>+ ')' ;                    \
+            qexpr  : '{' <expr>* '}' ;                    \
+            expr   : <unit> | <number> | <string> |       \
+                     <symbol> | <sexpr> | <qexpr> ;       \
+            lispy  : /^/ <expr>* /$/ ;                    \
         ",
-        Number, Symbol, Unit, Sexpr, Qexpr, Expr, Lispy
+        Number, String, Symbol, Unit, Sexpr, Qexpr, Expr, Lispy
     );
 
     std::shared_ptr<LispEnvironment> global_env = global_environment();
@@ -58,6 +61,6 @@ int main(int argc, char* argv[]) {
             std::cout << value << std::endl;
         }
     }
-    mpc_cleanup(7, Number, Symbol, Unit, Sexpr, Qexpr, Expr, Lispy);
+    mpc_cleanup(8, Unit, Number, String, Symbol, Sexpr, Qexpr, Expr, Lispy);
     return 0;
 }

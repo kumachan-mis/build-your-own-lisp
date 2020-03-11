@@ -32,11 +32,11 @@ std::shared_ptr<LispEnvironment> global_environment() {
     add_builtin_function("^", builtin_pow, environment);
 
     add_builtin_function("list", builtin_list, environment);
+    add_builtin_function("eval", builtin_eval, environment);
     add_builtin_function("head", builtin_head, environment);
     add_builtin_function("tail", builtin_tail, environment);
-    add_builtin_function("join", builtin_join, environment);
-    add_builtin_function("eval", builtin_eval, environment);
     add_builtin_function("cons", builtin_cons, environment);
+    add_builtin_function("join", builtin_join, environment);
     add_builtin_function("len",  builtin_len,  environment);
 
     add_builtin_function("if", builtin_if,  environment);
@@ -55,6 +55,7 @@ std::shared_ptr<LispEnvironment> global_environment() {
     add_builtin_function("defun",  builtin_defun,  environment);
     add_builtin_function("del",    builtin_del,    environment);
 
+    add_builtin_function("type", builtin_type, environment);
     add_builtin_function("exit", builtin_exit, environment);
 
     return environment;
@@ -66,16 +67,15 @@ LispValue evaluate(
 ) {
     switch (value.type) {
         case LispType::Unit:
-            /* Already evaluated */
-            return value;
         case LispType::Number:
-            /* Already evaluated */
+        case LispType::String:
+            /* End of evaluation */
             return value;
         case LispType::Symbol:
             return evaluate_symbol(value, environment);
         case LispType::BuiltinFunction:
-        // case LispType::LambdaFunction:
-            /* Already evaluated */
+        case LispType::LambdaFunction:
+            /* End of evaluation */
             return value;
         case LispType::S_Expression:
             return evaluate_sexpr(value, environment);
@@ -100,7 +100,7 @@ inline LispValue evaluate_symbol(
     LispValue& value,
     const std::shared_ptr<LispEnvironment>& environment
 ) {
-    return environment->find(value);
+    return environment->resolve(value);
 }
 
 inline LispValue evaluate_sexpr(
@@ -140,7 +140,7 @@ inline LispValue evaluate_lambda_function_call(
 ) {
     std::vector<LispValue>& params(lambda_function.cells[0].cells);
     LispValue& body(lambda_function.cells[1]);
-    std::shared_ptr<LispEnvironment>& environment(lambda_function.local_environment);
+    std::shared_ptr<LispEnvironment>& local_env(lambda_function.local_environment);
 
     size_t expected_num = params.size(), given_num = evaluated_arguments.size();
     if (expected_num < given_num) {
@@ -150,14 +150,14 @@ inline LispValue evaluate_lambda_function_call(
         );
     }
 
-    environment = std::shared_ptr<LispEnvironment>(new LispEnvironment(*environment));
+    local_env = std::shared_ptr<LispEnvironment>(new LispEnvironment(*local_env));
     for (size_t index = 0; index < given_num; index++) {
-        environment->assign(params[index], evaluated_arguments[index]);
+        local_env->assign(params[index], evaluated_arguments[index]);
     }
 
     if (expected_num == given_num) {
         body.type = LispType::S_Expression;
-        return evaluate(body, environment);
+        return evaluate(body, local_env);
     }
 
     params.erase(params.begin(), params.begin() + given_num);
