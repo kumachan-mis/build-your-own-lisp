@@ -14,6 +14,7 @@ inline int _mul(int x, int y);
 inline int _div(int x, int y);
 inline int _mod(int x, int y);
 inline int _pow(int x, int y);
+inline int _nega(int x);
 
 inline LispValue _order(
     std::vector<LispValue>& evaluated_arguments,
@@ -33,13 +34,24 @@ inline int _and(int x, int y);
 inline int _or(int x, int y);
 inline int _not(int x);
 
-inline bool all_type_of(const std::vector<LispValue>& cells, const LispType& type);
+inline bool all_type_of(const std::vector<LispValue>& cells, LispType type);
 
 
 LispValue builtin_add(
     std::vector<LispValue>& evaluated_arguments,
     const std::shared_ptr<LispEnvironment>& environment
 ) {
+    size_t num_args = evaluated_arguments.size();
+    if (num_args < 1) {
+        throw std::invalid_argument("Error: operator \"+\" takes one or more arguments");
+    }
+    if (num_args == 1) {
+        LispValue& argument(evaluated_arguments[0]);
+        if (argument.type != LispType::Number) {
+            throw std::invalid_argument("Error: operator \"+\" takes numbers");
+        }
+        return argument;
+    }
     return _operator(evaluated_arguments, _add, "add");
 }
 
@@ -47,6 +59,18 @@ LispValue builtin_sub(
     std::vector<LispValue>& evaluated_arguments,
     const std::shared_ptr<LispEnvironment>& environment
 ) {
+    size_t num_args = evaluated_arguments.size();
+    if (num_args < 1) {
+        throw std::invalid_argument("Error: operator \"-\" takes one or more arguments");
+    }
+    if (num_args == 1) {
+        LispValue& argument(evaluated_arguments[0]);
+        if (argument.type != LispType::Number) {
+            throw std::invalid_argument("Error: operator \"-\" takes numbers");
+        }
+        argument.number = _nega(argument.number);
+        return argument;
+    }
     return _operator(evaluated_arguments, _sub, "sub");
 }
 
@@ -525,6 +549,14 @@ inline int _mod(int x, int y) {
     return ret;
 }
 
+inline int _nega(int x) {
+    std::numeric_limits<int> limits;
+    if (x == limits.min()) {
+        throw std::overflow_error("Error: overflow occurs");
+    }
+    return -x;
+}
+
 inline LispValue _order(
     std::vector<LispValue>& evaluated_arguments,
     const std::function<int(int, int)>& order,
@@ -585,7 +617,7 @@ inline int _not(int x) {
     return !x;
 }
 
-inline bool all_type_of(const std::vector<LispValue>& cells, const LispType& type) {
+inline bool all_type_of(const std::vector<LispValue>& cells, LispType type) {
     for (const LispValue& value : cells) {
         if (value.type != type) return false;
     }

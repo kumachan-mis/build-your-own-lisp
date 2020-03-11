@@ -9,6 +9,6 @@ TARGET    := lisp.out
 
 all:
 	$(CXX) $(CXXFLAGS) $(LIBS) -o $(SRC_DIR)/$(TARGET) \
-	$(SRC_DIR)/main.cpp $(SRC_DIR)/lispvalue.cpp $(SRC_DIR)/parsing.cpp $(SRC_DIR)/evaluation.cpp $(SRC_DIR)/builtin.cpp $(SRC_DIR)//lib/mpc.cpp
+	$(SRC_DIR)/main.cpp $(SRC_DIR)/lispvalue.cpp $(SRC_DIR)/parser.cpp $(SRC_DIR)/evaluation.cpp $(SRC_DIR)/builtin.cpp
 
 .PHONY: all

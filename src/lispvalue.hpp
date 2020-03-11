@@ -21,8 +21,8 @@ enum class LispType {
     Q_Expression,
 };
 
-struct LispValue;
-struct LispEnvironment;
+class LispValue;
+class LispEnvironment;
 using  LispBuiltinFunction = std::function<LispValue(std::vector<LispValue>&, const std::shared_ptr<LispEnvironment>&)>;
 
 class LispValue {
@@ -35,8 +35,8 @@ class LispValue {
         std::shared_ptr<LispEnvironment> local_environment;
         std::vector<LispValue> cells;
 
-        LispValue():
-        type(LispType::Unit),
+        LispValue(LispType _type = LispType::Unit):
+        type(_type),
         number(),
         str(),
         symbol(),
@@ -45,7 +45,7 @@ class LispValue {
         cells()
         {}
 
-        LispValue(const LispType& _type, const int value):
+        LispValue(LispType _type, const int value):
         type(_type),
         number(value),
         str(),
@@ -59,7 +59,7 @@ class LispValue {
             }
         }
 
-        LispValue(const LispType& _type, const std::string& value):
+        LispValue(LispType _type, const std::string& value):
         type(_type),
         number(),
         str(_type == LispType::String? value : std::string()),
@@ -74,7 +74,7 @@ class LispValue {
         }
 
         LispValue(
-            const LispType& _type,
+            LispType _type,
             const LispBuiltinFunction& value,
             const std::string& _symbol
         ):
@@ -92,7 +92,7 @@ class LispValue {
         }
 
         LispValue(
-            const LispType& _type,
+            LispType _type,
             const std::vector<LispValue>& value,
             const std::shared_ptr<LispEnvironment>& environment
         ):
@@ -109,7 +109,7 @@ class LispValue {
             }
         }
 
-        LispValue(const LispType& _type, const std::vector<LispValue>& value):
+        LispValue(LispType _type, const std::vector<LispValue>& value):
         type(_type),
         number(),
         str(),
@@ -130,7 +130,7 @@ class LispValue {
     friend bool operator !=(const LispValue & x, const LispValue& y);
 };
 
-struct LispEnvironment {
+class LispEnvironment {
     public:
         LispEnvironment(
             const std::shared_ptr<LispEnvironment>& parent = std::shared_ptr<LispEnvironment>()
