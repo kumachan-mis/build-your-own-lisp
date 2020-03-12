@@ -151,7 +151,7 @@ class LispEnvironment {
             auto itr = _map.find(symbol);
             if (itr != _map.end()) return itr->second;
             else if (_parent_environment) return _parent_environment->resolve(symbol);
-            throw std::out_of_range("Error: unbound symbol \"" + symbol + "\"");
+            throw std::out_of_range("Error: unbound symbol " + symbol);
         }
 
         void define(const LispValue& symbol, const LispValue& value) {

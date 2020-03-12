@@ -49,7 +49,8 @@ LispValue parse_lisp(const std::string& input, size_t& pos) {
     } else if (c == sexpr_lparen || c == qexpr_lparen) {
         result = parse_expr(input, pos);
     } else {
-        throw std::invalid_argument(error_message(pos, "Error: fail to parse input"));
+        std::string invalid(1, c);
+        throw std::invalid_argument(error_message(pos, "Error: unexpected character " + invalid));
     }
     skip_whitespaces(input, pos);
     return result;
@@ -79,8 +80,7 @@ LispValue parse_atom(const std::string& input, size_t& pos) {
     
     for (size_t index = 1; index < atom.length(); index++) {
         if (number_characters.find(atom[index]) == std::string::npos) {
-            throw std::invalid_argument(
-                error_message(top, "Error: invalid symbol \"" + atom + "\""));
+            throw std::invalid_argument(error_message(top, "Error: invalid symbol " + atom));
         }
     }
     try {
