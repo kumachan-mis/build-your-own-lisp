@@ -114,6 +114,9 @@ LispValue parse_expr(const std::string& input, size_t& pos) {
         result.cells.push_back(parse_lisp(input, pos));
     }
     pos++;
+    if (result.type == LispType::S_Expression && result.cells.size() == 0) {
+        result.type = LispType::Unit;
+    }
     return result;
 }
 

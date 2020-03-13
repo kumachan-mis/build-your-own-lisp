@@ -234,14 +234,15 @@ LispValue builtin_head(
     if (evaluated_arguments.size() != 1) {
         throw std::invalid_argument("Error: function head takes one argument");
     }
-    const LispValue& argument(evaluated_arguments[0]);
+    LispValue& argument(evaluated_arguments[0]);
     if (argument.type != LispType::Q_Expression) {
         throw std::invalid_argument("Error: function head takes Q-Expression");
     }
     if (argument.cells.size() == 0) {
         throw std::invalid_argument("Error: the argument is empty Q-Expression");
     }
-    return argument.cells[0];
+    argument.cells = { argument.cells[0] };
+    return argument;
 }
 
 LispValue builtin_tail(
@@ -340,6 +341,12 @@ LispValue builtin_lambda(
         throw std::invalid_argument(
             "Error: first argument is expected to be Q-Expression of zero or more symbols");
     }
+    if (std::any_of(
+            params.begin(), params.end(),
+            [environment](const LispValue& value) { return environment->is_reserved(value.symbol); })
+    ) {
+        throw std::invalid_argument("Error: cannot use reserved symbol as parameter name");
+    }
     if (evaluated_arguments[1].type != LispType::Q_Expression) {
         throw std::invalid_argument("Error: second argument is expected to be Q-Expression");
     }
@@ -363,13 +370,19 @@ LispValue builtin_def(
     ) {
         throw std::invalid_argument(
             "Error: first argument is expected to be Q-Expression of one or more symbols");
-    }  
+    }
+    if (std::any_of(
+            symbols.begin(), symbols.end(),
+            [environment](const LispValue& value) { return environment->is_reserved(value.symbol); })
+    ) {
+        throw std::invalid_argument("Error: cannot re-define reserved symbol");
+    }
     if (symbols.size() != evaluated_arguments.size() - 1) {
         throw std::invalid_argument("Error: cannot define incorrect number of values to symbols");
     }
 
     for (size_t index = 0; index < symbols.size(); index++) {
-        environment->define(symbols[index], evaluated_arguments[index + 1]);
+        environment->define_global(symbols[index].symbol, evaluated_arguments[index + 1]);
     }
     return LispValue();
 }
@@ -389,6 +402,15 @@ LispValue builtin_defun(
         throw std::invalid_argument(
             "Error: first argument is expected to be Q-Expression of one or more symbols");
     }
+    if (environment->is_reserved(signiture[0].symbol)) {
+        throw std::invalid_argument("Error: cannot re-define reserved symbol");
+    }
+    if (std::any_of(
+            signiture.begin() + 1, signiture.end(),
+            [environment](const LispValue& value) { return environment->is_reserved(value.symbol); })
+    ) {
+        throw std::invalid_argument("Error: cannot use reserved symbol as parameter name");
+    }
     if (evaluated_arguments[1].type != LispType::Q_Expression) {
         throw std::invalid_argument("Error: second argument is expected to be Q-Expression");
     }
@@ -397,8 +419,8 @@ LispValue builtin_defun(
     signiture.erase(signiture.begin());
 
     std::shared_ptr<LispEnvironment> local_environment(new LispEnvironment(environment));
-    environment->define(
-        symbol,
+    environment->define_global(
+        symbol.symbol,
         LispValue(LispType::LambdaFunction, evaluated_arguments, local_environment)
     );
     return LispValue();
@@ -411,7 +433,6 @@ LispValue builtin_del(
     if (evaluated_arguments.size() != 1) {
         throw std::invalid_argument("Error: function del takes one argument");
     }
-
     const std::vector<LispValue>& symbols(evaluated_arguments[0].cells);
     if (
         evaluated_arguments[0].type != LispType::Q_Expression ||
@@ -422,7 +443,7 @@ LispValue builtin_del(
     }
 
     for (size_t index = 0; index < symbols.size(); index++) {
-        environment->erase(symbols[index]);
+        environment->delete_global(symbols[index].symbol);
     }
     return LispValue();
 }
@@ -442,17 +463,16 @@ LispValue builtin_exit(
     const std::shared_ptr<LispEnvironment>& environment
 ) {
     size_t num_args = evaluated_arguments.size();
-    if (num_args != 0 && num_args != 1) {
+    if (num_args != 1) {
         throw std::invalid_argument("Error: function exit takes zero or one argument");
     }
-
     const LispValue& argument(evaluated_arguments[0]);
-    if (num_args == 0) {
+    if (argument.type == LispType::Unit) {
         exit(0);
     } else if (argument.type == LispType::Number) {
         exit(argument.number);
     } else {
-        throw std::invalid_argument("Error: function exit takes nothing or a number");
+        throw std::invalid_argument("Error: function exit takes unit or number");
     }
 }
 

@@ -140,59 +140,59 @@ class LispEnvironment {
         : _map(), _parent_environment(parent)
         {}
 
-        LispValue resolve(const LispValue& symbol) const {
-            if (symbol.type != LispType::Symbol) {
-                throw std::invalid_argument("Error: type is not symbol");
+        LispValue resolve(const std::string& name) const {
+            auto itr = _map.find(name);
+            if (itr != _map.end()) return itr->second.value;
+            else if (_parent_environment) return _parent_environment->resolve(name);
+            throw std::out_of_range("Error: unbound symbol " + name);
+        }
+
+        void define_global(const std::string& name, const LispValue& value, bool is_reserved = false) {
+            if (!_parent_environment) {
+                auto itr = _map.find(name);
+                if (itr != _map.end() && itr->second.is_reserved) {
+                    throw std::invalid_argument("Error: cannnot re-define reserved symbol " + name);
+                }
+                _map[name] = {value, is_reserved};
             }
-            return resolve(symbol.symbol);
+            else _parent_environment->define_global(name, value);
         }
 
-        LispValue resolve(const std::string& symbol) const {
-            auto itr = _map.find(symbol);
-            if (itr != _map.end()) return itr->second;
-            else if (_parent_environment) return _parent_environment->resolve(symbol);
-            throw std::out_of_range("Error: unbound symbol " + symbol);
+        void define_local(const std::string& name, const LispValue& value) {
+            _map[name] = {value, false};
         }
 
-        void define(const LispValue& symbol, const LispValue& value) {
-            if (symbol.type != LispType::Symbol) {
-                throw std::invalid_argument("Error: type is not symbol");
+        void delete_global(const std::string& name) {
+            if (!_parent_environment) {
+                auto itr = _map.find(name);
+                if (itr != _map.end() && itr->second.is_reserved) {
+                    throw std::invalid_argument("Error: cannnot delete reserved symbol " + name);
+                }
+                _map.erase(name);
             }
-            define(symbol.symbol, value);
+            else _parent_environment->delete_global(name);
         }
 
-        void define(const std::string& symbol, const LispValue& value) {
-            if (!_parent_environment) _map[symbol] = value;
-            else _parent_environment->define(symbol, value);
+        void delete_local(const std::string& name) {
+            _map.erase(name);
         }
 
-        void erase(const LispValue& symbol) {
-            if (symbol.type != LispType::Symbol) {
-                throw std::invalid_argument("Error: type is not symbol");
+        bool is_reserved(const std::string& name) {
+            if (!_parent_environment) {
+                auto itr = _map.find(name);
+                return itr != _map.end() && itr->second.is_reserved;
             }
-            erase(symbol.symbol);
-        }
-
-        void erase(const std::string& symbol) {
-            if (!_parent_environment) _map.erase(symbol);
-            else _parent_environment->erase(symbol);
-        }
-
-        void assign(const LispValue& symbol, const LispValue& value) {
-            if (symbol.type != LispType::Symbol) {
-                throw std::invalid_argument("Error: type is not symbol");
-            }
-
-            _map[symbol.symbol] = value;
-        }
-
-        void assign(const std::string& symbol, const LispValue& value) {
-            _map[symbol] = value;
+            return _parent_environment->is_reserved(name);
         }
 
     private:
-        std::unordered_map<std::string, LispValue> _map;
-        std::shared_ptr<LispEnvironment> _parent_environment;
+        struct MapValue {
+            LispValue value;
+            bool is_reserved;
+        };
+
+        std::unordered_map<std::string, MapValue> _map;
+        const std::shared_ptr<LispEnvironment> _parent_environment;
 };
 
 #endif // _LISPVALUE_HPP_

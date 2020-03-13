@@ -26,6 +26,12 @@ inline LispValue evaluate_lambda_function_call(
 
 std::shared_ptr<LispEnvironment> global_environment() {
     std::shared_ptr<LispEnvironment> environment(new LispEnvironment());
+
+    environment->define_global("true",  LispValue(LispType::Number, 1),    true);
+    environment->define_global("false", LispValue(LispType::Number, 0),    true);
+    environment->define_global("unit",  LispValue(LispType::Unit),         true);
+    environment->define_global("nil",   LispValue(LispType::Q_Expression), true);
+
     add_builtin_function("+", builtin_add, environment);
     add_builtin_function("-", builtin_sub, environment);
     add_builtin_function("*", builtin_mul, environment);
@@ -95,14 +101,15 @@ inline void add_builtin_function(
     const LispBuiltinFunction& function,
     const std::shared_ptr<LispEnvironment>& environment
 ) {
-    environment->define(symbol, LispValue(LispType::BuiltinFunction, function, symbol));
+    environment->define_global(
+        symbol, LispValue(LispType::BuiltinFunction, function, symbol), true);
 }
 
 inline LispValue evaluate_symbol(
     LispValue& value,
     const std::shared_ptr<LispEnvironment>& environment
 ) {
-    return environment->resolve(value);
+    return environment->resolve(value.symbol);
 }
 
 inline LispValue evaluate_sexpr(
@@ -113,7 +120,7 @@ inline LispValue evaluate_sexpr(
     for (int index = 0; index < num_cells; index++) {
         value.cells[index] = evaluate(value.cells[index], environment);
     }
-    if (num_cells == 0) return LispValue();
+
     if (num_cells == 1) return value.cells[0];
 
     LispValue function(value.cells[0]);
@@ -125,10 +132,6 @@ inline LispValue evaluate_sexpr(
     }
 
     value.cells.erase(value.cells.begin());
-    if (value.cells.size() == 1 && value.cells[0].type == LispType::Unit) {
-        value.cells.clear();
-    }
-
     if (function.type == LispType::BuiltinFunction) {
         return function.builtin_function(value.cells, environment);
     } else {
@@ -145,7 +148,12 @@ inline LispValue evaluate_lambda_function_call(
     std::shared_ptr<LispEnvironment>& local_env(lambda_function.local_environment);
 
     size_t expected_num = params.size(), given_num = evaluated_arguments.size();
-    if (expected_num < given_num) {
+    if (expected_num == 0) {
+        if (given_num != 0 && (given_num != 1 || evaluated_arguments[0].type != LispType::Unit)) {
+            throw std::invalid_argument("Error: lambda function takes one unit");
+        }
+        given_num = 0;
+    } else if (expected_num < given_num) {
         throw std::invalid_argument(
             "Error: lambda function takes " + std::to_string(expected_num) + " argument "
             "but " + std::to_string(given_num) + " were given"
@@ -154,7 +162,7 @@ inline LispValue evaluate_lambda_function_call(
 
     local_env = std::shared_ptr<LispEnvironment>(new LispEnvironment(*local_env));
     for (size_t index = 0; index < given_num; index++) {
-        local_env->assign(params[index], evaluated_arguments[index]);
+        local_env->define_local(params[index].symbol, evaluated_arguments[index]);
     }
 
     if (expected_num == given_num) {
