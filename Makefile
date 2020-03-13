@@ -1,14 +1,25 @@
+TARGET    := lisp.out
+SRC_DIR   := src
+BUILD_DIR := build
+SRCS      := $(shell find $(SRC_DIR) -name *.cpp)
+OBJS      := $(SRCS:$(SRC_DIR)%.cpp=$(BUILD_DIR)%.o)
+DEPS      := $(OBJS:%.o=%.dpp)
+
 CXX       := g++-9
-CXXFLAGS  := --std=c++11 -O2 -Wall
+CXXFLAGS  := --std=c++11 -O2 -Wall -MMD -MP
 LIBS      := -ledit
 
-SRC_DIR   := src
-TARGET    := lisp.out
+MAKEDIR_P     := mkdir -p
 
 
+$(BUILD_DIR)/$(TARGET): $(OBJS)
+	$(CXX) $(LIBS) $^ -o $@
 
-all:
-	$(CXX) $(CXXFLAGS) $(LIBS) -o $(SRC_DIR)/$(TARGET) \
-	$(SRC_DIR)/main.cpp $(SRC_DIR)/lispvalue.cpp $(SRC_DIR)/parser.cpp $(SRC_DIR)/evaluation.cpp $(SRC_DIR)/builtin.cpp
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
+	$(MAKEDIR_P) $(BUILD_DIR) && $(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@ -MF $(BUILD_DIR)/$*.dpp
 
-.PHONY: all
+clean:
+	$(RM) -r $(BUILD_DIR)
+
+.PHONY: clean
+-include $(DEPS)
