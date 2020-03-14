@@ -83,9 +83,9 @@ std::string LispValue::type_name() const {
 
 template<typename T>
 std::ostream& operator<<(std::ostream& os, const std::vector<T>& vector) {
-    for (auto itr = vector.begin(), end = vector.end(); itr != end; itr++) {
-        os << *itr;
-        if (itr != end - 1) os << ' ';
+    for (size_t index = 0, size = vector.size(); index < size; index++) {
+        os << vector[index];
+        if (index != size - 1) os << ' ';
     }
     return os;
 }

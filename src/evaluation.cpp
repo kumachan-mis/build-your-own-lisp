@@ -27,9 +27,9 @@ inline LispValue evaluate_lambda_function_call(
 std::shared_ptr<LispEnvironment> global_environment() {
     std::shared_ptr<LispEnvironment> environment(new LispEnvironment());
 
+    environment->define_global("unit",  LispValue(),                       true);
     environment->define_global("true",  LispValue(LispType::Number, 1),    true);
     environment->define_global("false", LispValue(LispType::Number, 0),    true);
-    environment->define_global("unit",  LispValue(LispType::Unit),         true);
     environment->define_global("nil",   LispValue(LispType::Q_Expression), true);
 
     add_builtin_function("+", builtin_add, environment);
@@ -117,10 +117,11 @@ inline LispValue evaluate_sexpr(
     const std::shared_ptr<LispEnvironment>& environment
 ) {
     const int num_cells = value.cells.size();
-    for (int index = 0; index < num_cells; index++) {
-        value.cells[index] = evaluate(value.cells[index], environment);
+    for (LispValue& cell : value.cells) {
+        cell = evaluate(cell, environment);
     }
 
+    if (num_cells == 0) return LispValue();
     if (num_cells == 1) return value.cells[0];
 
     LispValue function(value.cells[0]);

@@ -64,8 +64,8 @@ class LispValue {
         LispValue(LispType _type, const std::string& value):
         type(_type),
         number(),
-        str(_type == LispType::String? value : std::string()),
-        symbol(_type == LispType::Symbol? value : std::string()),
+        str(_type == LispType::String ? value : std::string()),
+        symbol(_type == LispType::Symbol ? value : std::string()),
         builtin_function(),
         local_environment(),
         cells()
@@ -137,50 +137,50 @@ class LispEnvironment {
         LispEnvironment(
             const std::shared_ptr<LispEnvironment>& parent = std::shared_ptr<LispEnvironment>()
         )
-        : _map(), _parent_environment(parent)
+        : _envmap(), _parent_environment(parent)
         {}
 
         LispValue resolve(const std::string& name) const {
-            auto itr = _map.find(name);
-            if (itr != _map.end()) return itr->second.value;
+            envmap_itr itr = _envmap.find(name);
+            if (itr != _envmap.end()) return itr->second.value;
             else if (_parent_environment) return _parent_environment->resolve(name);
             throw std::out_of_range("Error: unbound symbol " + name);
         }
 
         void define_global(const std::string& name, const LispValue& value, bool is_reserved = false) {
             if (!_parent_environment) {
-                auto itr = _map.find(name);
-                if (itr != _map.end() && itr->second.is_reserved) {
+                envmap_itr itr = _envmap.find(name);
+                if (itr != _envmap.end() && itr->second.is_reserved) {
                     throw std::invalid_argument("Error: cannnot re-define reserved symbol " + name);
                 }
-                _map[name] = {value, is_reserved};
+                _envmap[name] = {value, is_reserved};
             }
             else _parent_environment->define_global(name, value);
         }
 
         void define_local(const std::string& name, const LispValue& value) {
-            _map[name] = {value, false};
+            _envmap[name] = {value, false};
         }
 
         void delete_global(const std::string& name) {
             if (!_parent_environment) {
-                auto itr = _map.find(name);
-                if (itr != _map.end() && itr->second.is_reserved) {
+                envmap_itr itr = _envmap.find(name);
+                if (itr != _envmap.end() && itr->second.is_reserved) {
                     throw std::invalid_argument("Error: cannnot delete reserved symbol " + name);
                 }
-                _map.erase(name);
+                _envmap.erase(name);
             }
             else _parent_environment->delete_global(name);
         }
 
         void delete_local(const std::string& name) {
-            _map.erase(name);
+            _envmap.erase(name);
         }
 
         bool is_reserved(const std::string& name) {
             if (!_parent_environment) {
-                auto itr = _map.find(name);
-                return itr != _map.end() && itr->second.is_reserved;
+                envmap_itr itr = _envmap.find(name);
+                return itr != _envmap.end() && itr->second.is_reserved;
             }
             return _parent_environment->is_reserved(name);
         }
@@ -190,8 +190,9 @@ class LispEnvironment {
             LispValue value;
             bool is_reserved;
         };
+        using envmap_itr = std::unordered_map<std::string, MapValue>::const_iterator;
 
-        std::unordered_map<std::string, MapValue> _map;
+        std::unordered_map<std::string, MapValue> _envmap;
         const std::shared_ptr<LispEnvironment> _parent_environment;
 };
 

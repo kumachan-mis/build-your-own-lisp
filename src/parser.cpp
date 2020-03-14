@@ -78,7 +78,7 @@ LispValue parse_atom(const std::string& input, size_t& pos) {
         return LispValue(LispType::Symbol, atom);
     }
     
-    for (size_t index = 1; index < atom.length(); index++) {
+    for (size_t index = 1, len = atom.length(); index < len; index++) {
         if (number_characters.find(atom[index]) == std::string::npos) {
             throw std::invalid_argument(error_message(top, "Error: invalid symbol " + atom));
         }
@@ -107,14 +107,14 @@ LispValue parse_string(const std::string& input, size_t& pos) {
 
 LispValue parse_expr(const std::string& input, size_t& pos) {
     const char lparen = input[pos];
-    const char rparen = lparen == sexpr_lparen? sexpr_rparen : qexpr_rparen;
-    LispValue result(lparen == sexpr_lparen? LispType::S_Expression : LispType::Q_Expression);
+    const char rparen = lparen == sexpr_lparen ? sexpr_rparen : qexpr_rparen;
+    LispValue result(lparen == sexpr_lparen ? LispType::S_Expression : LispType::Q_Expression);
     pos++;
     while (input[pos] != rparen) {
         result.cells.push_back(parse_lisp(input, pos));
     }
     pos++;
-    if (result.type == LispType::S_Expression && result.cells.size() == 0) {
+    if (result.type == LispType::S_Expression && result.cells.empty()) {
         result.type = LispType::Unit;
     }
     return result;
@@ -129,10 +129,10 @@ inline void skip_whitespaces(const std::string& input, size_t& pos) {
 }
 
 inline std::string error_message(size_t pos, const std::string& message, bool is_end) {
-    pos -= is_end? 2 : 1;
-    const size_t offset = 4;
+    pos -= is_end ? 2 : 1;
+    const size_t len = pos + 4;
     std::string ret;
-    for (size_t index = 0; index < pos + offset; index++) {
+    for (size_t index = 0; index < len; index++) {
         ret.push_back('~');
     }
     ret += "^\n" + message;
