@@ -51,6 +51,16 @@ LispValue builtin_case(
     const std::shared_ptr<LispEnvironment>& environment
 );
 
+LispValue builtin_when(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment
+);
+
+LispValue builtin_unless(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment
+);
+
 LispValue builtin_and(
     std::vector<LispValue>& evaluated_arguments,
     const std::shared_ptr<LispEnvironment>& environment

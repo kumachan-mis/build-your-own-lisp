@@ -26,6 +26,12 @@ inline LispValue _relation(
     const std::function<int(int, int)>& relation,
     const std::string& name
 );
+inline LispValue _ifdo(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment,
+    const std::string& name,
+    const bool when_or_unless
+);
 
 inline int _add(int x, int y);
 inline int _sub(int x, int y);
@@ -180,6 +186,20 @@ LispValue builtin_case(
         }
     }
     return LispValue();
+}
+
+LispValue builtin_when(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment
+) {
+    return _ifdo(evaluated_arguments, environment, "when", true);
+}
+
+LispValue builtin_unless(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment
+) {
+    return _ifdo(evaluated_arguments, environment, "unless", false);
 }
 
 LispValue builtin_and(
@@ -516,14 +536,11 @@ LispValue builtin_do(
     std::vector<LispValue>& evaluated_arguments,
     const std::shared_ptr<LispEnvironment>& environment
 ) {
-    if (evaluated_arguments.size() < 1) {
-        throw std::invalid_argument("Error: function do takes one or more arguments");
-    }
     if (!all_type_of(evaluated_arguments, LispType::Q_Expression)) {
         throw std::invalid_argument("Error: function do takes Q-Expressions");
     }
 
-    LispValue result(LispType::Q_Expression);
+    LispValue result;
     for (LispValue& argument : evaluated_arguments) {
         argument.type = LispType::S_Expression;
         result = evaluate(argument, environment);
@@ -663,6 +680,35 @@ inline LispValue _relation(
         }
     }
     return LispValue(LispType::Number, result);
+}
+
+inline LispValue _ifdo(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment,
+    const std::string& name,
+    const bool when_or_unless
+) {
+    if (evaluated_arguments.size() < 1) {
+        throw std::invalid_argument("Error: function " + name + " takes one or more arguments");
+    }
+    LispValue condition = evaluated_arguments[0];
+    if (condition.type != LispType::Number) {
+        throw std::invalid_argument("Error: condition is expected to be number");
+    }
+    evaluated_arguments.erase(evaluated_arguments.begin());
+    if (!all_type_of(evaluated_arguments, LispType::Q_Expression)) {
+        throw std::invalid_argument("Error: each statement is expected to be Q-Expression");
+    }
+
+    LispValue result;
+    if ((when_or_unless && !condition.number) || (!when_or_unless && condition.number)) {
+        return result;
+    }
+    for (LispValue& argument : evaluated_arguments) {
+        argument.type = LispType::S_Expression;
+        result = evaluate(argument, environment);
+    }
+    return result;
 }
 
 inline int _add(int x, int y) {

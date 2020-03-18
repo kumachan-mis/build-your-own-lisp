@@ -48,9 +48,12 @@ std::shared_ptr<LispEnvironment> global_environment() {
     add_builtin_function("join", builtin_join, environment);
     add_builtin_function("len",  builtin_len,  environment);
 
-    add_builtin_function("if",   builtin_if,   environment);
-    add_builtin_function("cond", builtin_cond, environment);
-    add_builtin_function("case", builtin_case, environment);
+    add_builtin_function("if",     builtin_if,     environment);
+    add_builtin_function("cond",   builtin_cond,   environment);
+    add_builtin_function("case",   builtin_case,   environment);
+    add_builtin_function("when",   builtin_when,   environment);
+    add_builtin_function("unless", builtin_unless, environment);
+
     add_builtin_function("&&",   builtin_and,  environment);
     add_builtin_function("||",   builtin_or,   environment);
     add_builtin_function("!" ,   builtin_not,  environment);
