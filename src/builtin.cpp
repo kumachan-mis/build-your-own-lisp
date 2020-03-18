@@ -1,6 +1,7 @@
 #include "builtin.hpp"
 
 #include <algorithm>
+#include <iostream>
 #include "evaluation.hpp"
 
 
@@ -507,6 +508,37 @@ LispValue builtin_del(
 
     for (const LispValue& symbol : symbols) {
         environment->delete_global(symbol.symbol);
+    }
+    return LispValue();
+}
+
+LispValue builtin_do(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment
+) {
+    if (evaluated_arguments.size() < 1) {
+        throw std::invalid_argument("Error: function do takes one or more arguments");
+    }
+    if (!all_type_of(evaluated_arguments, LispType::Q_Expression)) {
+        throw std::invalid_argument("Error: function do takes Q-Expressions");
+    }
+
+    LispValue result(LispType::Q_Expression);
+    for (LispValue& argument : evaluated_arguments) {
+        argument.type = LispType::S_Expression;
+        result = evaluate(argument, environment);
+    }
+    return result;
+}
+
+LispValue builtin_print(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment
+) {
+    for (size_t index = 0, size = evaluated_arguments.size(); index < size; index++) {
+        std::cout << evaluated_arguments[index];
+        if (index != size - 1) std::cout << ' ';
+        else                   std::cout << std::endl;
     }
     return LispValue();
 }

@@ -151,6 +151,16 @@ LispValue builtin_del(
     const std::shared_ptr<LispEnvironment>& environment
 );
 
+LispValue builtin_do(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment
+);
+
+LispValue builtin_print(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment
+);
+
 LispValue builtin_type(
     std::vector<LispValue>& evaluated_arguments,
     const std::shared_ptr<LispEnvironment>& environment

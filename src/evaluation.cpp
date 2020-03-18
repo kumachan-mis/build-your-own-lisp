@@ -66,8 +66,10 @@ std::shared_ptr<LispEnvironment> global_environment() {
     add_builtin_function("defun",  builtin_defun,  environment);
     add_builtin_function("del",    builtin_del,    environment);
 
-    add_builtin_function("type", builtin_type, environment);
-    add_builtin_function("exit", builtin_exit, environment);
+    add_builtin_function("do",    builtin_do,      environment);
+    add_builtin_function("print", builtin_print,   environment);
+    add_builtin_function("type",  builtin_type,    environment);
+    add_builtin_function("exit",  builtin_exit,    environment);
 
     return environment;
 }
