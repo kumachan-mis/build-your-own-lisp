@@ -121,6 +121,66 @@ LispValue builtin_if(
     }
 }
 
+LispValue builtin_cond(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment
+) {
+    for (const LispValue& argument : evaluated_arguments) {
+        if (
+            argument.type != LispType::Q_Expression ||
+            argument.cells.size() != 2 || 
+            argument.cells[1].type != LispType::Q_Expression
+        ) {
+            throw std::invalid_argument(
+                "Error: each argument is expected to be { condition { statement } }");
+        }
+    }
+    const LispValue& otherwise(environment->resolve("otherwise"));
+    for (LispValue& argument : evaluated_arguments) {
+        LispValue condition = evaluate(argument.cells[0], environment);
+        if (condition.type != LispType::Number && condition != otherwise) {
+            throw std::invalid_argument("Error: condition does not evaluate to number");
+        }
+        if ((condition.type == LispType::Number && condition.number) || condition == otherwise) {
+            argument.cells[1].type = LispType::S_Expression;
+            return evaluate(argument.cells[1], environment);
+        }
+    }
+    return LispValue();
+}
+
+LispValue builtin_case(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment
+) {
+    if (evaluated_arguments.size() < 1) {
+        throw std::invalid_argument("Error: function case takes one or more arguments");
+    }
+    LispValue value = evaluated_arguments[0];
+    evaluated_arguments.erase(evaluated_arguments.begin());
+    for (const LispValue& condition_statement : evaluated_arguments) {
+        if (
+            condition_statement.type != LispType::Q_Expression ||
+            condition_statement.cells.size() != 2 ||
+            condition_statement.cells[1].type != LispType::Q_Expression
+        ) {
+            throw std::invalid_argument(
+                "Error: each condition statement is expected to be { value { statement } }");
+        }
+    }
+
+    const LispValue& otherwise(environment->resolve("otherwise"));
+    for (LispValue& condition_statement : evaluated_arguments) {
+        const LispValue& case_value(condition_statement.cells[0]);
+        LispValue& statement(condition_statement.cells[1]);
+        if (value == case_value || case_value == otherwise) {
+            statement.type = LispType::S_Expression;
+            return evaluate(statement, environment);
+        }
+    }
+    return LispValue();
+}
+
 LispValue builtin_and(
     std::vector<LispValue>& evaluated_arguments,
     const std::shared_ptr<LispEnvironment>& environment
@@ -187,7 +247,7 @@ LispValue builtin_leq(
     std::vector<LispValue>& evaluated_arguments,
     const std::shared_ptr<LispEnvironment>& environment
 ) {
-    return _relation(evaluated_arguments, _lt, "leq");
+    return _relation(evaluated_arguments, _leq, "leq");
 }
 
 LispValue builtin_list(
@@ -341,7 +401,7 @@ LispValue builtin_lambda(
 
     const bool reserved_symbol_exists = std::any_of(
         params.begin(), params.end(),
-        [environment](const LispValue& value) { return environment->is_reserved(value.symbol); }
+        [&environment](const LispValue& value) { return environment->is_reserved(value.symbol); }
     );
     if (reserved_symbol_exists) {
         throw std::invalid_argument("Error: cannot use reserved symbol as parameter name");
@@ -373,7 +433,7 @@ LispValue builtin_def(
 
     const bool reserved_symbol_exists = std::any_of(
         symbols.begin(), symbols.end(),
-        [environment](const LispValue& value) { return environment->is_reserved(value.symbol); }
+        [&environment](const LispValue& value) { return environment->is_reserved(value.symbol); }
     );
     if (reserved_symbol_exists) {
         throw std::invalid_argument("Error: cannot re-define reserved symbol");
@@ -409,7 +469,7 @@ LispValue builtin_defun(
 
     const bool reserved_symbol_exists = std::any_of(
         signiture.begin() + 1, signiture.end(),
-        [environment](const LispValue& value) { return environment->is_reserved(value.symbol); }
+        [&environment](const LispValue& value) { return environment->is_reserved(value.symbol); }
     );
     if (reserved_symbol_exists) {
         throw std::invalid_argument("Error: cannot use reserved symbol as parameter name");

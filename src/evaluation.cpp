@@ -27,10 +27,11 @@ inline LispValue evaluate_lambda_function_call(
 std::shared_ptr<LispEnvironment> global_environment() {
     std::shared_ptr<LispEnvironment> environment(new LispEnvironment());
 
-    environment->define_global("unit",  LispValue(),                       true);
-    environment->define_global("true",  LispValue(LispType::Number, 1),    true);
-    environment->define_global("false", LispValue(LispType::Number, 0),    true);
-    environment->define_global("nil",   LispValue(LispType::Q_Expression), true);
+    environment->define_global("unit",        LispValue(),                              true);
+    environment->define_global("true",        LispValue(LispType::Number, 1),           true);
+    environment->define_global("false",       LispValue(LispType::Number, 0),           true);
+    environment->define_global("nil",         LispValue(LispType::Q_Expression),        true);
+    environment->define_global("otherwise",   LispValue(LispType::Symbol, "otherwise"), true);
 
     add_builtin_function("+", builtin_add, environment);
     add_builtin_function("-", builtin_sub, environment);
@@ -40,23 +41,25 @@ std::shared_ptr<LispEnvironment> global_environment() {
     add_builtin_function("^", builtin_pow, environment);
 
     add_builtin_function("list", builtin_list, environment);
+    add_builtin_function("cons", builtin_cons, environment);
     add_builtin_function("eval", builtin_eval, environment);
     add_builtin_function("head", builtin_head, environment);
     add_builtin_function("tail", builtin_tail, environment);
-    add_builtin_function("cons", builtin_cons, environment);
     add_builtin_function("join", builtin_join, environment);
     add_builtin_function("len",  builtin_len,  environment);
 
-    add_builtin_function("if", builtin_if,  environment);
-    add_builtin_function("==", builtin_eq,  environment);
-    add_builtin_function("!=", builtin_neq, environment);
-    add_builtin_function(">",  builtin_gt,  environment);
-    add_builtin_function(">=", builtin_geq, environment);
-    add_builtin_function("<",  builtin_lt,  environment);
-    add_builtin_function("<=", builtin_leq, environment);
-    add_builtin_function("&&", builtin_and, environment);
-    add_builtin_function("||", builtin_or,  environment);
-    add_builtin_function("!" , builtin_not, environment);
+    add_builtin_function("if",   builtin_if,   environment);
+    add_builtin_function("cond", builtin_cond, environment);
+    add_builtin_function("case", builtin_case, environment);
+    add_builtin_function("&&",   builtin_and,  environment);
+    add_builtin_function("||",   builtin_or,   environment);
+    add_builtin_function("!" ,   builtin_not,  environment);
+    add_builtin_function("==",   builtin_eq,   environment);
+    add_builtin_function("!=",   builtin_neq,  environment);
+    add_builtin_function(">",    builtin_gt,   environment);
+    add_builtin_function(">=",   builtin_geq,  environment);
+    add_builtin_function("<",    builtin_lt,   environment);
+    add_builtin_function("<=",   builtin_leq,  environment);
 
     add_builtin_function("lambda", builtin_lambda, environment);
     add_builtin_function("def",    builtin_def,    environment);

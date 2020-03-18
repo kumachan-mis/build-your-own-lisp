@@ -41,6 +41,31 @@ LispValue builtin_if(
     const std::shared_ptr<LispEnvironment>& environment
 );
 
+LispValue builtin_cond(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment
+);
+
+LispValue builtin_case(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment
+);
+
+LispValue builtin_and(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment
+);
+
+LispValue builtin_or(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment
+);
+
+LispValue builtin_not(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment
+);
+
 LispValue builtin_eq(
     std::vector<LispValue>& evaluated_arguments,
     const std::shared_ptr<LispEnvironment>& environment
@@ -71,22 +96,12 @@ LispValue builtin_leq(
     const std::shared_ptr<LispEnvironment>& environment
 );
 
-LispValue builtin_not(
-    std::vector<LispValue>& evaluated_arguments,
-    const std::shared_ptr<LispEnvironment>& environment
-);
-
-LispValue builtin_and(
-    std::vector<LispValue>& evaluated_arguments,
-    const std::shared_ptr<LispEnvironment>& environment
-);
-
-LispValue builtin_or(
-    std::vector<LispValue>& evaluated_arguments,
-    const std::shared_ptr<LispEnvironment>& environment
-);
-
 LispValue builtin_list(
+    std::vector<LispValue>& evaluated_arguments,
+    const std::shared_ptr<LispEnvironment>& environment
+);
+
+LispValue builtin_cons(
     std::vector<LispValue>& evaluated_arguments,
     const std::shared_ptr<LispEnvironment>& environment
 );
@@ -102,11 +117,6 @@ LispValue builtin_head(
 );
 
 LispValue builtin_tail(
-    std::vector<LispValue>& evaluated_arguments,
-    const std::shared_ptr<LispEnvironment>& environment
-);
-
-LispValue builtin_cons(
     std::vector<LispValue>& evaluated_arguments,
     const std::shared_ptr<LispEnvironment>& environment
 );
