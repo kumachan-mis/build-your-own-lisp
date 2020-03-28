@@ -154,7 +154,6 @@ inline LispValue evaluate_lambda_function_call(
 ) {
     std::vector<LispValue>& params(lambda_function.cells[0].cells);
     LispValue& body(lambda_function.cells[1]);
-    std::shared_ptr<LispEnvironment>& local_env(lambda_function.local_environment);
 
     size_t expected_num = params.size(), given_num = evaluated_arguments.size();
     if (expected_num == 0) {
@@ -169,7 +168,7 @@ inline LispValue evaluate_lambda_function_call(
         );
     }
 
-    local_env = std::shared_ptr<LispEnvironment>(new LispEnvironment(*local_env));
+    std::shared_ptr<LispEnvironment> local_env(new LispEnvironment(*lambda_function.local_environment));
     for (size_t index = 0; index < given_num; index++) {
         local_env->define_local(params[index].symbol, evaluated_arguments[index]);
     }
@@ -180,5 +179,6 @@ inline LispValue evaluate_lambda_function_call(
     }
 
     params.erase(params.begin(), params.begin() + given_num);
+    lambda_function.local_environment = local_env;
     return lambda_function;
 }

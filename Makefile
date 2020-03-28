@@ -16,7 +16,7 @@ $(BUILD_DIR)/$(TARGET): $(OBJS)
 	$(CXX) $(LIBS) $^ -o $@
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
-	$(MAKEDIR_P) $(BUILD_DIR) && $(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@ -MF $(BUILD_DIR)/$*.dpp
+	$(MAKEDIR_P) $(BUILD_DIR) && $(CXX) $(CXXFLAGS) -c $< -o $@ -MF $(BUILD_DIR)/$*.dpp
 
 clean:
 	$(RM) -r $(BUILD_DIR)

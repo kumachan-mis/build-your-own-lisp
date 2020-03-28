@@ -431,8 +431,8 @@ LispValue builtin_lambda(
         throw std::invalid_argument("Error: second argument is expected to be Q-Expression");
     }
 
-    std::shared_ptr<LispEnvironment> local_environment(new LispEnvironment(environment));
-    return LispValue(LispType::LambdaFunction, evaluated_arguments, local_environment);
+    std::shared_ptr<LispEnvironment> local_env(new LispEnvironment(environment));
+    return LispValue(LispType::LambdaFunction, evaluated_arguments, local_env);
 }
 
 LispValue builtin_def(
@@ -502,10 +502,10 @@ LispValue builtin_defun(
     LispValue symbol(signiture[0]);
     signiture.erase(signiture.begin());
 
-    std::shared_ptr<LispEnvironment> local_environment(new LispEnvironment(environment));
+    std::shared_ptr<LispEnvironment> local_env(new LispEnvironment(environment));
     environment->define_global(
         symbol.symbol,
-        LispValue(LispType::LambdaFunction, evaluated_arguments, local_environment)
+        LispValue(LispType::LambdaFunction, evaluated_arguments, local_env)
     );
     return LispValue();
 }
